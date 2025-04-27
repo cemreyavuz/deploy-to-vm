@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/v71/github"
 )
 
 var db = make(map[string]string)
@@ -12,6 +14,32 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+
+	r.POST("/deploy-with-gh", func(c *gin.Context) {
+		// TODO(cemreyavuz): setup a secret token for the webhook
+		// validate payload
+		payload, err := github.ValidatePayload(c.Request, nil)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+			return
+		}
+
+		// parse the payload
+		event, err := github.ParseWebHook(github.WebHookType(c.Request), payload)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Unrecognized event type"})
+			return
+		}
+
+		switch event := event.(type) {
+		case *github.ReleaseEvent:
+			// TODO(cemreyavuz): check if release event has required fields
+			fmt.Println("Received action:", *event.Action)
+			c.JSON(http.StatusOK, gin.H{"action": *event.Action})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported event type"})
+		}
+	})
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
