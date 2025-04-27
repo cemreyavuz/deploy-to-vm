@@ -21,3 +21,9 @@ go run main.go
 ```sh
 go build -o app.out
 ```
+
+### Testing the application
+
+```sh
+go test
+```
