@@ -75,7 +75,7 @@ func TestDeployWithGH_Success(t *testing.T) {
 	router := setupRouter()
 
 	w := httptest.NewRecorder()
-	payload := `{"action":"created"}`
+	payload := `{"action":"created","release":{"assets":[{"browser_download_url":"https://example.com/asset"}]},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
 	req.Header.Set("X-GitHub-Event", "release")
 	req.Header.Set("Content-Type", "application/json")
