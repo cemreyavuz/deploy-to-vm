@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPingRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)
@@ -21,7 +22,7 @@ func TestPingRoute(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingContentType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -32,7 +33,7 @@ func TestDeployWithGH_MissingContentType(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -44,7 +45,7 @@ func TestDeployWithGH_MissingEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action": "created"}`
@@ -58,7 +59,7 @@ func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action":"created"}`
@@ -71,16 +72,26 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Unsupported event type")
 }
 
+type MockGithubClient struct{}
+
+func (m *MockGithubClient) DownloadAsset(url string, outputPath string) {}
+
 func TestDeployWithGH_Success(t *testing.T) {
-	router := setupRouter()
+	mockGithubClient := &MockGithubClient{}
+	router := setupRouter(RouterOptions{AssetsFolder: "test-assets", GithubClient: mockGithubClient})
 
 	w := httptest.NewRecorder()
-	payload := `{"action":"created","release":{"assets":[{"browser_download_url":"https://example.com/asset"}]},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	payload := `{"action":"created","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
 	req.Header.Set("X-GitHub-Event", "release")
 	req.Header.Set("Content-Type", "application/json")
+
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `{"action":"created"}`)
+
+	t.Cleanup(func() {
+		os.RemoveAll("test-assets")
+	})
 }
