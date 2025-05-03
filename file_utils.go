@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -12,10 +13,13 @@ func createDirIfIsNotExist(path string) error {
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Printf("Directory does not exist, creating: \"%s\"", path)
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("Failed to create directory: %w", err)
 		}
+	} else {
+		log.Printf("Directory already exists: \"%s\"", path)
 	}
 	return nil
 }
