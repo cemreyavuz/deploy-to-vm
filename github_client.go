@@ -25,6 +25,14 @@ type GithubClient struct {
 	HttpClient  HttpClient
 }
 
+// GithubClientInterface is an interface that defines the methods for the
+// GithubClient struct. This allows for easier testing and mocking of the
+// GithubClient in unit tests. The interface can be implemented by any struct
+// that has the same methods as the GithubClient struct.
+type GithubClientInterface interface {
+	DownloadAsset(url string, outputPath string) error
+}
+
 // DownloadAsset is a method of the GithubClient struct that downloads an asset
 // from a given URL and saves it to a specified output path.
 func (c *GithubClient) DownloadAsset(url string, outputPath string) error {

@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type MockGithubClient struct{}
+
+func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
+	return nil
+}
+
 func TestPingRoute(t *testing.T) {
 	router := setupRouter(RouterOptions{})
 
@@ -72,10 +78,16 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_Success(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		GithubClient: mockGithubClient,
+	})
 
 	w := httptest.NewRecorder()
-	payload := `{"action":"created","release":{"assets":[{"browser_download_url":"https://example.com/asset"}]},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	payload := `{"action":"created","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
 	req.Header.Set("X-GitHub-Event", "release")
 	req.Header.Set("Content-Type", "application/json")

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -10,7 +10,7 @@ import (
 
 type RouterOptions struct {
 	AssetsDir    string
-	GithubClient GithubClient
+	GithubClient GithubClientInterface
 }
 
 func setupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -37,7 +37,25 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 		switch event := event.(type) {
 		case *github.ReleaseEvent:
 			// TODO(cemreyavuz): check if release event has required fields
-			fmt.Println("Received action:", *event.Action)
+
+			// Create release directory if it doesn't exist
+			releaseDir, createReleaseDirErr := createReleaseDirIfIsNotExist(
+				routerOptions.AssetsDir,
+				*event.Repo.Owner.Login,
+				*event.Repo.Name,
+				*event.Release.TagName,
+			)
+			if createReleaseDirErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create release directory"})
+				return
+			}
+
+			// Create asset path
+			assetPath := path.Join(releaseDir, *event.Release.Assets[0].Name)
+
+			// Download the asset
+			routerOptions.GithubClient.DownloadAsset(*event.Release.Assets[0].URL, assetPath)
+
 			c.JSON(http.StatusOK, gin.H{"action": *event.Action})
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported event type"})

@@ -22,7 +22,7 @@ func main() {
 
 	// create github client
 	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
-	githubClient := GithubClient{
+	githubClient := &GithubClient{
 		AccessToken: githubAccessToken,
 		HttpClient:  &http.Client{},
 	}
