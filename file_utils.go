@@ -27,12 +27,13 @@ func createDirIfIsNotExist(path string) error {
 }
 
 // Checks if a release directory exists and creates it if it doesn't
-func createReleaseDirIfIsNotExist(assetsDir string, owner string, repo string, tag string) error {
+func createReleaseDirIfIsNotExist(assetsDir string, owner string, repo string, tag string) (string, error) {
 	if assetsDir == "" || owner == "" || repo == "" || tag == "" {
-		return errors.New("Assets directory, owner, repo, or tag cannot be empty")
+		return "", errors.New("Assets directory, owner, repo, or tag cannot be empty")
 	}
 
 	releaseDirPath := path.Join(assetsDir, owner, repo, tag)
 
-	return createDirIfIsNotExist(releaseDirPath)
+	createDirErr := createDirIfIsNotExist(releaseDirPath)
+	return releaseDirPath, createDirErr
 }

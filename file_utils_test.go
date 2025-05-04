@@ -52,23 +52,23 @@ func TestCreateReleaseDirIfIsNotExist_EmptyParams(t *testing.T) {
 	tag := "v1.0.0"
 
 	// act/assert: try to create a release directory with empty tag parameter
-	emptyTagErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, "")
+	_, emptyTagErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, "")
 	assert.Error(t, emptyTagErr, "Should return an error for empty tag parameter")
 
 	// act/assert: try to create a release directory with empty repo parameter
-	emptyRepoErr := createReleaseDirIfIsNotExist(tempDir, owner, "", tag)
+	_, emptyRepoErr := createReleaseDirIfIsNotExist(tempDir, owner, "", tag)
 	assert.Error(t, emptyRepoErr, "Should return an error for empty repo parameter")
 
 	// act/assert: try to create a release directory with empty owner parameter
-	emptyOwnerErr := createReleaseDirIfIsNotExist(tempDir, "", repo, tag)
+	_, emptyOwnerErr := createReleaseDirIfIsNotExist(tempDir, "", repo, tag)
 	assert.Error(t, emptyOwnerErr, "Should return an error for empty owner parameter")
 
 	// act/assert: try to create a release directory with empty assetsDir parameter
-	assetsDirErr := createReleaseDirIfIsNotExist("", owner, repo, tag)
+	_, assetsDirErr := createReleaseDirIfIsNotExist("", owner, repo, tag)
 	assert.Error(t, assetsDirErr, "Should return an error for empty assetsDir parameter")
 
 	// act/assert: try to create a release directory with empty parameters
-	emptyParamsErr := createReleaseDirIfIsNotExist("", "", "", "")
+	_, emptyParamsErr := createReleaseDirIfIsNotExist("", "", "", "")
 	assert.Error(t, emptyParamsErr, "Should return an error for empty parameters")
 }
 
@@ -82,7 +82,10 @@ func TestCreateReleaseDirIfIsNotExist_Success(t *testing.T) {
 	dirPath := path.Join(tempDir, owner, repo, tag)
 
 	// act: create the release directory
-	createDirErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+	releaseDir, createDirErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+
+	// assert: check if the release directory path is correct
+	assert.Equal(t, dirPath, releaseDir, "Expected release directory path to match")
 
 	// assert: check if the error is nil
 	assert.NoError(t, createDirErr, "Expected no error when creating release directory")
