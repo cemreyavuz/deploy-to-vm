@@ -37,6 +37,10 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 		switch event := event.(type) {
 		case *github.ReleaseEvent:
 			// TODO(cemreyavuz): check if release event has required fields
+			if *event.Action != "published" {
+				c.JSON(http.StatusOK, gin.H{"message": "Release is not published yet, ignoring."})
+				return
+			}
 
 			// Create release directory if it doesn't exist
 			releaseDir, createReleaseDirErr := createReleaseDirIfIsNotExist(

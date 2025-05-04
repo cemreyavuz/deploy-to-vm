@@ -77,6 +77,27 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Unsupported event type")
 }
 
+func TestDeployWithGH_ReleaseNotPublished(t *testing.T) {
+	// Arrange: create a new router
+	router := setupRouter(RouterOptions{})
+
+	// Arrange: create a new HTTP request with the release event
+	w := httptest.NewRecorder()
+	payload := `{"action":"created"}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+
+	// Act: send the request to the router
+	router.ServeHTTP(w, req)
+
+	// Assert: check if the response status code is 200 OK
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Assert: check if the response body contains the expected message
+	assert.Contains(t, w.Body.String(), `{"message":"Release is not published yet, ignoring."}`)
+}
+
 func TestDeployWithGH_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
@@ -87,12 +108,12 @@ func TestDeployWithGH_Success(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	payload := `{"action":"created","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	payload := `{"action":"published","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
 	req.Header.Set("X-GitHub-Event", "release")
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), `{"action":"created"}`)
+	assert.Contains(t, w.Body.String(), `{"action":"published"}`)
 }
