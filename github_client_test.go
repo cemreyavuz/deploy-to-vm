@@ -80,3 +80,46 @@ func TestDownloadAsset_Success(t *testing.T) {
 	}
 	assert.Equal(t, testFileContent, string(fileContent), "Expected file content to match")
 }
+
+func TestDownloadAssets_Single(t *testing.T) {
+	// arrange: get test helpers
+	accessToken, tempDir := setupGithubClientTest(t)
+
+	// arrange: create a mock HTTP client
+	w := httptest.NewRecorder()
+	var testFileContent = "download-assets-test-file-content"
+	w.Body = bytes.NewBufferString(testFileContent)
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, "GET", req.Method)
+			assert.Equal(t, "Bearer "+accessToken, req.Header.Get("Authorization"))
+			assert.Equal(t, "application/octet-stream", req.Header.Get("Accept"))
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       w.Result().Body,
+			}, nil
+		},
+	}
+
+	// arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// arrange: define the test file path
+	var testFilePath = path.Join(tempDir, "output.txt")
+
+	// act: download the asset
+	downloadErr := client.DownloadAsset("https://example.com/asset", testFilePath)
+
+	// assert: check if the file was created
+	assert.NoError(t, downloadErr, "Expected no error")
+
+	// assert: check if the file content is as expected
+	fileContent, readErr := os.ReadFile(testFilePath)
+	if readErr != nil {
+		t.Fatalf("Expected no error reading file, got %v", readErr)
+	}
+	assert.Equal(t, testFileContent, string(fileContent), "Expected file content to match")
+}

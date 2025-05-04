@@ -1,8 +1,8 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -54,11 +54,15 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				return
 			}
 
-			// Create asset path
-			assetPath := path.Join(releaseDir, *event.Release.Assets[0].Name)
-
-			// Download the asset
-			routerOptions.GithubClient.DownloadAsset(*event.Release.Assets[0].URL, assetPath)
+			// Download assets
+			downloadErr := routerOptions.GithubClient.DownloadAssets(event.Release.Assets, releaseDir)
+			if downloadErr != nil {
+				log.Printf("Failed to download assets: \"%v\"", downloadErr)
+				// TODO(cemreyavuz): remove the release directory if download fails
+				// TODO(cemreyavuz): return a different error code depending on the error
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download assets"})
+				return
+			}
 
 			c.JSON(http.StatusOK, gin.H{"action": *event.Action})
 		default:

@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
+
+	"github.com/google/go-github/v71/github"
 )
 
 // HttpClient is an interface that defines the Do method for making HTTP
@@ -31,6 +34,7 @@ type GithubClient struct {
 // that has the same methods as the GithubClient struct.
 type GithubClientInterface interface {
 	DownloadAsset(url string, outputPath string) error
+	DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error
 }
 
 // DownloadAsset is a method of the GithubClient struct that downloads an asset
@@ -76,5 +80,17 @@ func (c *GithubClient) DownloadAsset(url string, outputPath string) error {
 	}
 
 	log.Printf("Asset downloaded successfully to: \"%s\"", outputPath)
+	return nil
+}
+
+func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error {
+	for _, asset := range assets {
+		assetPath := path.Join(releaseDir, *asset.Name)
+		err := c.DownloadAsset(*asset.URL, assetPath)
+		if err != nil {
+			return errors.New(fmt.Sprintf("failed to download asset %s: %v", *asset.Name, err))
+		}
+	}
+
 	return nil
 }

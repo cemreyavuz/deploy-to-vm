@@ -6,12 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-github/v71/github"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockGithubClient struct{}
 
 func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
+	return nil
+}
+
+func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error {
 	return nil
 }
 
