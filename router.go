@@ -37,8 +37,8 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 		switch event := event.(type) {
 		case *github.ReleaseEvent:
 			// TODO(cemreyavuz): check if release event has required fields
-			if *event.Action != "published" {
-				c.JSON(http.StatusOK, gin.H{"message": "Release is not published yet, ignoring."})
+			if *event.Action != "released" {
+				c.JSON(http.StatusOK, gin.H{"message": "Only \"released\" action is supported, ignoring..."})
 				return
 			}
 

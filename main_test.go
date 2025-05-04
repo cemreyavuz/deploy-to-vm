@@ -82,7 +82,7 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Unsupported event type")
 }
 
-func TestDeployWithGH_ReleaseNotPublished(t *testing.T) {
+func TestDeployWithGH_ReleaseNotReleased(t *testing.T) {
 	// Arrange: create a new router
 	router := setupRouter(RouterOptions{})
 
@@ -100,7 +100,7 @@ func TestDeployWithGH_ReleaseNotPublished(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Assert: check if the response body contains the expected message
-	assert.Contains(t, w.Body.String(), `{"message":"Release is not published yet, ignoring."}`)
+	assert.Contains(t, w.Body.String(), `{"message":"Only \"released\" action is supported, ignoring..."}`)
 }
 
 func TestDeployWithGH_Success(t *testing.T) {
@@ -113,12 +113,12 @@ func TestDeployWithGH_Success(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	payload := `{"action":"published","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
 	req.Header.Set("X-GitHub-Event", "release")
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), `{"action":"published"}`)
+	assert.Contains(t, w.Body.String(), `{"action":"released"}`)
 }
