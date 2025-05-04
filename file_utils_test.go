@@ -42,3 +42,53 @@ func TestCreateDirIfIsNotExist_Success(t *testing.T) {
 		t.Fatalf("Expected directory to be created, but it does not exist")
 	}
 }
+
+func TestCreateReleaseDirIfIsNotExist_EmptyParams(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// arrange: define the directory path for the test
+	owner := "test-owner"
+	repo := "test-repo"
+	tag := "v1.0.0"
+
+	// act/assert: try to create a release directory with empty tag parameter
+	emptyTagErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, "")
+	assert.Error(t, emptyTagErr, "Should return an error for empty tag parameter")
+
+	// act/assert: try to create a release directory with empty repo parameter
+	emptyRepoErr := createReleaseDirIfIsNotExist(tempDir, owner, "", tag)
+	assert.Error(t, emptyRepoErr, "Should return an error for empty repo parameter")
+
+	// act/assert: try to create a release directory with empty owner parameter
+	emptyOwnerErr := createReleaseDirIfIsNotExist(tempDir, "", repo, tag)
+	assert.Error(t, emptyOwnerErr, "Should return an error for empty owner parameter")
+
+	// act/assert: try to create a release directory with empty assetsDir parameter
+	assetsDirErr := createReleaseDirIfIsNotExist("", owner, repo, tag)
+	assert.Error(t, assetsDirErr, "Should return an error for empty assetsDir parameter")
+
+	// act/assert: try to create a release directory with empty parameters
+	emptyParamsErr := createReleaseDirIfIsNotExist("", "", "", "")
+	assert.Error(t, emptyParamsErr, "Should return an error for empty parameters")
+}
+
+func TestCreateReleaseDirIfIsNotExist_Success(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// arrange: define the directory path for the test
+	owner := "test-owner"
+	repo := "test-repo"
+	tag := "v1.0.0"
+	dirPath := path.Join(tempDir, owner, repo, tag)
+
+	// act: create the release directory
+	createDirErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+
+	// assert: check if the error is nil
+	assert.NoError(t, createDirErr, "Expected no error when creating release directory")
+
+	// assert: check if directory was created
+	if _, statErr := os.Stat(dirPath); os.IsNotExist(statErr) {
+		t.Fatalf("Expected directory to be created, but it does not exist")
+	}
+}
