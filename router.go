@@ -8,7 +8,12 @@ import (
 	"github.com/google/go-github/v71/github"
 )
 
-func setupRouter() *gin.Engine {
+type RouterOptions struct {
+	AssetsDir    string
+	GithubClient GithubClient
+}
+
+func setupRouter(routerOptions RouterOptions) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()

@@ -10,7 +10,7 @@ import (
 )
 
 func TestPingRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)
@@ -21,7 +21,7 @@ func TestPingRoute(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingContentType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -32,7 +32,7 @@ func TestDeployWithGH_MissingContentType(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -44,7 +44,7 @@ func TestDeployWithGH_MissingEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action": "created"}`
@@ -58,7 +58,7 @@ func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action":"created"}`
@@ -72,7 +72,7 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_Success(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action":"created","release":{"assets":[{"browser_download_url":"https://example.com/asset"}]},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`

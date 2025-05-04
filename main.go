@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -19,7 +20,19 @@ func main() {
 		log.Fatalf("Error creating assets directory: \"%v\"", err)
 	}
 
-	r := setupRouter()
+	// create github client
+	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
+	githubClient := GithubClient{
+		AccessToken: githubAccessToken,
+		HttpClient:  &http.Client{},
+	}
+
+	// create router
+	r := setupRouter(RouterOptions{
+		AssetsDir:    assetsDir,
+		GithubClient: githubClient,
+	})
+
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }
