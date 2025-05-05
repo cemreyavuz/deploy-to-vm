@@ -11,6 +11,7 @@ import (
 type RouterOptions struct {
 	AssetsDir    string
 	GithubClient GithubClientInterface
+	NginxClient  NginxClientInterface
 }
 
 func setupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -61,6 +62,16 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				// TODO(cemreyavuz): remove the release directory if download fails
 				// TODO(cemreyavuz): return a different error code depending on the error
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download assets"})
+				return
+			}
+
+			// TODO(cemreyavuz): move release assets to correct folder
+
+			// Reload nginx unit
+			reloadErr := routerOptions.NginxClient.Reload()
+			if reloadErr != nil {
+				log.Printf("Failed to reload nginx unit: \"%v\"", reloadErr)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload nginx unit"})
 				return
 			}
 

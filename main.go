@@ -27,10 +27,14 @@ func main() {
 		HttpClient:  &http.Client{},
 	}
 
+	// create nginx client
+	nginxClient := &NginxClient{}
+
 	// create router
 	r := setupRouter(RouterOptions{
 		AssetsDir:    assetsDir,
 		GithubClient: githubClient,
+		NginxClient:  nginxClient,
 	})
 
 	// Listen and Server in 0.0.0.0:8080

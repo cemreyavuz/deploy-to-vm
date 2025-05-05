@@ -20,6 +20,12 @@ func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, release
 	return nil
 }
 
+type MockNginxClient struct{}
+
+func (m *MockNginxClient) Reload() error {
+	return nil
+}
+
 func TestPingRoute(t *testing.T) {
 	router := setupRouter(RouterOptions{})
 
@@ -106,10 +112,12 @@ func TestDeployWithGH_ReleaseNotReleased(t *testing.T) {
 func TestDeployWithGH_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
+	mockNginxClient := &MockNginxClient{}
 
 	router := setupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		GithubClient: mockGithubClient,
+		NginxClient:  mockNginxClient,
 	})
 
 	w := httptest.NewRecorder()
