@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -65,7 +66,15 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				return
 			}
 
-			// TODO(cemreyavuz): move release assets to correct folder
+			// Link release assets to site directory
+			// TODO(cemreyavuz): read site dir from DB
+			siteDir := os.Getenv("DEPLOY_TO_VM_SITE_DIR")
+			moveErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+			if moveErr != nil {
+				log.Printf("Failed to move release assets to site directory: \"%v\"", moveErr)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move release assets to site directory"})
+				return
+			}
 
 			// Reload nginx unit
 			reloadErr := routerOptions.NginxClient.Reload()
