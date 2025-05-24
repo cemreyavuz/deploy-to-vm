@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 var db = make(map[string]string)
@@ -12,6 +14,12 @@ func main() {
 	// set the log entry prefix
 	log.SetPrefix("[deploy-to-vm] ")
 	log.Println("Starting deploy-to-vm server...")
+
+	// load .env file
+	dotenvErr := godotenv.Load()
+	if dotenvErr != nil {
+		log.Fatalf("No .env file found or error loading .env file")
+	}
 
 	// create assets folder if not exists
 	assetsDir := os.Getenv("DEPLOY_TO_VM_ASSETS_DIR")

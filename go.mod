@@ -5,6 +5,7 @@ go 1.24.2
 require (
 	github.com/gin-gonic/gin v1.7.4
 	github.com/google/go-github/v71 v71.0.0
+	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.4.0
 )
 
