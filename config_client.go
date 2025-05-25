@@ -1,0 +1,74 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"os"
+)
+
+type DeployToVmConfigRepository struct {
+	Name       string `json:"name"`
+	Owner      string `json:"owner"`
+	SourceType string `json:"sourceType"`
+	TargetDir  string `json:"targetDir"`
+	TargetType string `json:"targetType"`
+}
+
+type DeployToVmConfig struct {
+	Repositories []DeployToVmConfigRepository `json:"repositories"`
+}
+
+type ConfigClient struct {
+	Config *DeployToVmConfig
+}
+
+type ConfigClientInterface interface {
+	GetConfig() *DeployToVmConfig
+	LoadConfig() error
+}
+
+func (c *ConfigClient) GetConfig() *DeployToVmConfig {
+	// Load client config if not already loaded
+	if c.Config == nil {
+		loadErr := c.LoadConfig()
+		if loadErr != nil {
+			panic("Error loading config file: " + loadErr.Error())
+		}
+	}
+
+	return c.Config
+}
+
+func (c *ConfigClient) LoadConfig() error {
+	// Read the config file path from environment variable
+	configFilePath := os.Getenv("DEPLOY_TO_VM_CONFIG_FILE_PATH")
+	if configFilePath == "" {
+		log.Fatalf("Environment variable DEPLOY_TO_VM_CONFIG_FILE_PATH is not set")
+		return os.ErrNotExist
+	}
+
+	// Read config file
+	file, openErr := os.Open(configFilePath)
+	if openErr != nil {
+		log.Fatal("Error opening config file:", openErr)
+		return openErr
+	}
+
+	// Ensure the file is closed after reading
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			log.Fatal("Error closing config file:", closeErr)
+		}
+	}()
+
+	// Decode the JSON config file into DeployToVmConfig struct
+	var config DeployToVmConfig
+	decoder := json.NewDecoder(file)
+	if decodeErr := decoder.Decode(&config); decodeErr != nil {
+		log.Fatal("Error decoding config file:", decodeErr)
+		return decodeErr
+	}
+
+	c.Config = &config
+	return nil
+}

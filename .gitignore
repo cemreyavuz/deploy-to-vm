@@ -29,3 +29,6 @@ dev-assets
 
 # test artifacts
 test-assets
+
+# config files
+config.json
