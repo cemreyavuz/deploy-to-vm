@@ -21,6 +21,15 @@ func main() {
 		log.Fatalf("No .env file found or error loading .env file")
 	}
 
+	// Create config client and load config
+	configClient := &ConfigClient{}
+	loadConfigErr := configClient.LoadConfig()
+	if loadConfigErr != nil {
+		log.Fatalf("Error loading config: \"%v\"", loadConfigErr)
+	} else {
+		log.Println("Config loaded successfully")
+	}
+
 	// create assets folder if not exists
 	assetsDir := os.Getenv("DEPLOY_TO_VM_ASSETS_DIR")
 	err := createDirIfIsNotExist(assetsDir)
@@ -41,6 +50,7 @@ func main() {
 	// create router
 	r := setupRouter(RouterOptions{
 		AssetsDir:    assetsDir,
+		ConfigClient: configClient,
 		GithubClient: githubClient,
 		NginxClient:  nginxClient,
 	})

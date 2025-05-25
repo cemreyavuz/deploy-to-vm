@@ -11,6 +11,7 @@ import (
 
 type RouterOptions struct {
 	AssetsDir    string
+	ConfigClient ConfigClientInterface
 	GithubClient GithubClientInterface
 	NginxClient  NginxClientInterface
 }
