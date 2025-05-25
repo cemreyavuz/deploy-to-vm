@@ -114,8 +114,22 @@ func TestDeployWithGH_Success(t *testing.T) {
 	mockGithubClient := &MockGithubClient{}
 	mockNginxClient := &MockNginxClient{}
 
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
 	router := setupRouter(RouterOptions{
 		AssetsDir:    tempDir,
+		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
 		NginxClient:  mockNginxClient,
 	})

@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -68,8 +67,20 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Link release assets to site directory
-			// TODO(cemreyavuz): read site dir from DB
-			siteDir := os.Getenv("DEPLOY_TO_VM_SITE_DIR")
+			repositoryConfig := routerOptions.ConfigClient.GetRepository(*event.Repo.Name, *event.Repo.Owner.Login)
+			if repositoryConfig == nil {
+				log.Printf("Repository not found in config: %s/%s", *event.Repo.Owner.Login, *event.Repo.Name)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Repository not found in config"})
+				return
+			}
+
+			siteDir := repositoryConfig.TargetDir
+			if siteDir == "" {
+				log.Printf("Site directory not found for repository: %s/%s", *event.Repo.Owner.Login, *event.Repo.Name)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Site directory not found for repository"})
+				return
+			}
+
 			moveErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
 			if moveErr != nil {
 				log.Printf("Failed to move release assets to site directory: \"%v\"", moveErr)
