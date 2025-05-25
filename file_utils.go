@@ -1,8 +1,11 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -57,6 +60,84 @@ func readFilesInDir(dir string) ([]string, error) {
 	})
 
 	return files, readErr
+}
+
+// Untar gz files in a directory. It reads all files in the directory, checks if
+// they are tar files, and extracts them.
+func untarGzFilesInDir(dir string) error {
+	// Read files in the directory recursively
+	files, readErr := readFilesInDir(dir)
+	if readErr != nil {
+		return errors.New(fmt.Sprintf("Error while reading the directory: %v", readErr))
+	}
+
+	log.Printf("Found files in the directory: \n- %v", strings.Join(files, "\n- "))
+	// Iterate through each file
+	for _, filePath := range files {
+		if filepath.Ext(filePath) != ".gz" {
+			log.Printf("Skipping non-tar file: %v", filePath)
+			continue
+		}
+
+		// Get target folder for the extracted files
+		targetDir := filepath.Dir(filePath)
+
+		log.Println("Processing tar file:", filePath)
+
+		file, openErr := os.Open(filePath)
+		if openErr != nil {
+			return errors.New(fmt.Sprintf("Error while opening the file: %v", openErr))
+		}
+
+		gzr, newReaderErr := gzip.NewReader(file)
+		if newReaderErr != nil {
+			return errors.New(fmt.Sprintf("Error while creating gzip reader: %v", newReaderErr))
+		}
+
+		tr := tar.NewReader(gzr)
+		for {
+			header, err := tr.Next()
+			if err == io.EOF {
+				break // End of tar archive
+			}
+
+			if err != nil {
+				return errors.New(fmt.Sprintf("Error while reading the tar file: %v", err))
+			}
+
+			switch header.Typeflag {
+			case tar.TypeDir:
+				// skip directories
+			case tar.TypeReg:
+				target := filepath.Join(targetDir, header.Name)
+				if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+					return fmt.Errorf("mkdir for file: %w", err)
+				}
+				outFile, err := os.Create(target)
+				if err != nil {
+					return fmt.Errorf("create file: %w", err)
+				}
+				if _, err := io.Copy(outFile, tr); err != nil {
+					outFile.Close()
+					return fmt.Errorf("copy file: %w", err)
+				}
+				outFile.Close()
+			}
+
+			// Log the extracted file
+			log.Printf("Extracted file: %s", header.Name)
+		}
+
+		// Remove the original gz file after extraction
+		removeErr := os.Remove(filePath)
+		if removeErr != nil {
+			return errors.New(fmt.Sprintf("Error while removing the original gz file: %v", removeErr))
+		} else {
+			log.Printf("Removed original gz file: %s", filePath)
+		}
+	}
+
+	return nil
 }
 
 // Link release assets to site directory

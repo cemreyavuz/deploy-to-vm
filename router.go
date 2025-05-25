@@ -66,6 +66,14 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				return
 			}
 
+			// Untar files in the release directory
+			untarErr := untarGzFilesInDir(releaseDir)
+			if untarErr != nil {
+				log.Printf("Failed to untar files in release directory: \"%v\"", untarErr)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to untar files in release directory"})
+				return
+			}
+
 			// Link release assets to site directory
 			repositoryConfig := routerOptions.ConfigClient.GetRepository(*event.Repo.Name, *event.Repo.Owner.Login)
 			if repositoryConfig == nil {
