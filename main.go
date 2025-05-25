@@ -28,10 +28,6 @@ func main() {
 		log.Fatalf("Error creating assets directory: \"%v\"", err)
 	}
 
-	// Create db client
-	dbClient := &DBClient{}
-	dbClient.Connect()
-
 	// create github client
 	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
 	githubClient := &GithubClient{
