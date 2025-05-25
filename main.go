@@ -47,12 +47,19 @@ func main() {
 	// create nginx client
 	nginxClient := &NginxClient{}
 
+	// Read secret token from environment variable
+	secretToken := os.Getenv("DEPLOY_TO_VM_SECRET_TOKEN")
+	if secretToken == "" {
+		log.Fatal("Environment variable DEPLOY_TO_VM_SECRET_TOKEN is not set")
+	}
+
 	// create router
 	r := setupRouter(RouterOptions{
 		AssetsDir:    assetsDir,
 		ConfigClient: configClient,
 		GithubClient: githubClient,
 		NginxClient:  nginxClient,
+		SecretToken:  secretToken,
 	})
 
 	// Run the server on the specified port

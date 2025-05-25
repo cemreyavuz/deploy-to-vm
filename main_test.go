@@ -2,6 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -109,7 +112,50 @@ func TestDeployWithGH_ReleaseNotReleased(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `{"message":"Only \"released\" action is supported, ignoring..."}`)
 }
 
-func TestDeployWithGH_Success(t *testing.T) {
+func TestDeployWithGH_WithSignature_Success(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+	mockNginxClient := &MockNginxClient{}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+		NginxClient:  mockNginxClient,
+		SecretToken:  "test",
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+
+	mac := hmac.New(sha256.New, []byte("test"))
+	mac.Write([]byte(payload))
+	signature := "sha256=" + hex.EncodeToString(mac.Sum(nil))
+
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("X-Hub-Signature-256", signature)
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `{"action":"released"}`)
+}
+
+func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 	mockNginxClient := &MockNginxClient{}

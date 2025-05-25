@@ -13,6 +13,7 @@ type RouterOptions struct {
 	ConfigClient ConfigClientInterface
 	GithubClient GithubClientInterface
 	NginxClient  NginxClientInterface
+	SecretToken  string
 }
 
 func setupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -21,9 +22,8 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 	r := gin.Default()
 
 	r.POST("/deploy-with-gh", func(c *gin.Context) {
-		// TODO(cemreyavuz): setup a secret token for the webhook
 		// validate payload
-		payload, err := github.ValidatePayload(c.Request, nil)
+		payload, err := github.ValidatePayload(c.Request, []byte(routerOptions.SecretToken))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 			return
