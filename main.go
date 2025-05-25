@@ -55,6 +55,10 @@ func main() {
 		NginxClient:  nginxClient,
 	})
 
-	// Listen and Server in 0.0.0.0:8080
-	r.Run(":8080")
+	// Run the server on the specified port
+	port := os.Getenv("DEPLOY_TO_VM_PORT")
+	if port == "" {
+		log.Fatalf("Environment variable DEPLOY_TO_VM_PORT is not set")
+	}
+	r.Run(":" + port)
 }
