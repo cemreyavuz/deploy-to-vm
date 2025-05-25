@@ -24,6 +24,7 @@ type ConfigClient struct {
 
 type ConfigClientInterface interface {
 	GetConfig() *DeployToVmConfig
+	GetRepository(name string, owner string) *DeployToVmConfigRepository
 	LoadConfig() error
 }
 
@@ -37,6 +38,21 @@ func (c *ConfigClient) GetConfig() *DeployToVmConfig {
 	}
 
 	return c.Config
+}
+
+func (c *ConfigClient) GetRepository(name string, owner string) *DeployToVmConfigRepository {
+	// Get the config
+	config := c.GetConfig()
+
+	// Search for the repository by name
+	for _, repo := range config.Repositories {
+		if repo.Name == name && repo.Owner == owner {
+			return &repo
+		}
+	}
+
+	// Return nil if not found
+	return nil
 }
 
 func (c *ConfigClient) LoadConfig() error {

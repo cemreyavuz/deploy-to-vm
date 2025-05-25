@@ -36,6 +36,33 @@ func TestGetConfig_AlreadyLoadedConfigSuccess(t *testing.T) {
 	assert.Equal(t, "nginx", config.Repositories[0].TargetType, "Expected target type to match")
 }
 
+func TestGetRepository_Success(t *testing.T) {
+	// Arrange: create a ConfigClient instance with a loaded config
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "test-repo",
+				Owner:      "test-owner",
+				SourceType: "github",
+				TargetDir:  "/var/www/test-repo",
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	// Act: call GetRepository to retrieve the repository
+	repo := configClient.GetRepository("test-repo", "test-owner")
+
+	// Assert: check if the repository is as expected
+	assert.NotNil(t, repo, "Expected repository to be not nil")
+	assert.Equal(t, "test-repo", repo.Name, "Expected repository name to match")
+	assert.Equal(t, "test-owner", repo.Owner, "Expected repository owner to match")
+	assert.Equal(t, "github", repo.SourceType, "Expected source type to match")
+	assert.Equal(t, "/var/www/test-repo", repo.TargetDir, "Expected target directory to match")
+	assert.Equal(t, "nginx", repo.TargetType, "Expected target type to match")
+}
+
 func TestLoadConfig_Success(t *testing.T) {
 	// Arrange: create a temporary config file for testing
 	tempDir := t.TempDir()
