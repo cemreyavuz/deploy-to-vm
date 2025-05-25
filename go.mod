@@ -1,4 +1,4 @@
-module gin-app
+module deploy-to-vm
 
 go 1.24.2
 
