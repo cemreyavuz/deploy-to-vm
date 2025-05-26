@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// create nginx client
-	nginxClient := &NginxClient{}
+	nginxClient := NewNginxClient(nil)
 
 	// Read secret token from environment variable
 	secretToken := os.Getenv("DEPLOY_TO_VM_SECRET_TOKEN")
