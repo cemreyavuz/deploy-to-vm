@@ -53,13 +53,23 @@ func main() {
 		log.Fatal("Environment variable DEPLOY_TO_VM_SECRET_TOKEN is not set")
 	}
 
+	// Create notification client
+	notificationClient := &NotificationClient{}
+	notificationClient.LoadWebhookUrl()
+	if notificationClient.webhookURL == "" {
+		log.Println("Notification webhook URL is not set, notifications will not be sent")
+	} else {
+		log.Println("Notification webhook URL is set, notifications will be sent")
+	}
+
 	// create router
 	r := setupRouter(RouterOptions{
-		AssetsDir:    assetsDir,
-		ConfigClient: configClient,
-		GithubClient: githubClient,
-		NginxClient:  nginxClient,
-		SecretToken:  secretToken,
+		AssetsDir:          assetsDir,
+		ConfigClient:       configClient,
+		GithubClient:       githubClient,
+		NginxClient:        nginxClient,
+		NotificationClient: notificationClient,
+		SecretToken:        secretToken,
 	})
 
 	// Run the server on the specified port

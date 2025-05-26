@@ -33,10 +33,8 @@ func (c *NotificationClient) Notify(message string) error {
 	}
 
 	if c.webhookURL == "" {
-		loadErr := c.LoadWebhookUrl()
-		if loadErr != nil {
-			return errors.New("Could not load notification webhook URL, not sending notification")
-		}
+		log.Println("Notification webhook URL is not set, skipping notification")
+		return nil
 	}
 
 	// Prepare the data to be sent in the POST request
