@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -9,11 +10,12 @@ import (
 )
 
 type RouterOptions struct {
-	AssetsDir    string
-	ConfigClient ConfigClientInterface
-	GithubClient GithubClientInterface
-	NginxClient  NginxClientInterface
-	SecretToken  string
+	AssetsDir          string
+	ConfigClient       ConfigClientInterface
+	GithubClient       GithubClientInterface
+	NginxClient        NginxClientInterface
+	NotificationClient NotificationClientInterface
+	SecretToken        string
 }
 
 func setupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -102,6 +104,13 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				log.Printf("Failed to reload nginx unit: \"%v\"", reloadErr)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload nginx unit"})
 				return
+			}
+
+			// Send notification
+			notificationMessage := fmt.Sprintf("New release (%s) deployed for %s", *event.Release.TagName, *event.Repo.Name)
+			notificationErr := routerOptions.NotificationClient.Notify(notificationMessage)
+			if notificationErr != nil {
+				log.Printf("Failed to send notification: \"%v\"", notificationErr)
 			}
 
 			c.JSON(http.StatusOK, gin.H{"action": *event.Action})

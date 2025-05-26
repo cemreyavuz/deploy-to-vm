@@ -29,6 +29,16 @@ func (m *MockNginxClient) Reload() error {
 	return nil
 }
 
+type MockNotificationClient struct{}
+
+func (m *MockNotificationClient) LoadWebhookUrl() error {
+	return nil
+}
+
+func (m *MockNotificationClient) Notify(message string) error {
+	return nil
+}
+
 func TestPingRoute(t *testing.T) {
 	router := setupRouter(RouterOptions{})
 
@@ -116,6 +126,7 @@ func TestDeployWithGH_WithSignature_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 	mockNginxClient := &MockNginxClient{}
+	mockNotificationClient := &MockNotificationClient{}
 
 	configClient := &ConfigClient{}
 	configClient.Config = &DeployToVmConfig{
@@ -131,11 +142,12 @@ func TestDeployWithGH_WithSignature_Success(t *testing.T) {
 	}
 
 	router := setupRouter(RouterOptions{
-		AssetsDir:    tempDir,
-		ConfigClient: configClient,
-		GithubClient: mockGithubClient,
-		NginxClient:  mockNginxClient,
-		SecretToken:  "test",
+		AssetsDir:          tempDir,
+		ConfigClient:       configClient,
+		GithubClient:       mockGithubClient,
+		NginxClient:        mockNginxClient,
+		NotificationClient: mockNotificationClient,
+		SecretToken:        "test",
 	})
 
 	w := httptest.NewRecorder()
@@ -159,6 +171,7 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 	mockNginxClient := &MockNginxClient{}
+	mockNotificationClient := &MockNotificationClient{}
 
 	configClient := &ConfigClient{}
 	configClient.Config = &DeployToVmConfig{
@@ -174,10 +187,11 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 	}
 
 	router := setupRouter(RouterOptions{
-		AssetsDir:    tempDir,
-		ConfigClient: configClient,
-		GithubClient: mockGithubClient,
-		NginxClient:  mockNginxClient,
+		AssetsDir:          tempDir,
+		ConfigClient:       configClient,
+		GithubClient:       mockGithubClient,
+		NginxClient:        mockNginxClient,
+		NotificationClient: mockNotificationClient,
 	})
 
 	w := httptest.NewRecorder()
