@@ -11,7 +11,7 @@ func TestExecClient_Command_ReturnsExecCommand(t *testing.T) {
 	execCommand := client.Command("echo", "hello")
 
 	assert.NotNil(t, execCommand, "Expected execCommand to be non-nil")
-	assert.NotNil(t, execCommand.cmd, "Expected underlying execCommand.Cmd to be non-nil")
+	assert.NotNil(t, execCommand.CombinedOutput, "Expected underlying execCommand.CombinedOutput to be non-nil")
 }
 
 func TestExecClient_CombinedOutput_Success(t *testing.T) {
