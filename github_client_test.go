@@ -188,3 +188,109 @@ func TestDownloadAssets_Multiple(t *testing.T) {
 	}
 	assert.Equal(t, testFileContent, string(testAsset0Content), "Expected file content to match")
 }
+
+func TestDownloadAsset_NewRequest_Error(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, _ := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns an error
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return nil, assert.AnError
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Act: attempt to download an asset with an invalid URL
+	err := client.DownloadAsset(":://", "output.txt")
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when creating request")
+	assert.Contains(t, err.Error(), "Error creating request", "Expected error message to match")
+}
+
+func TestDownloadAsset_HttpClientDo_Error(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, _ := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns an error
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return nil, assert.AnError
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Act: attempt to download an asset
+	err := client.DownloadAsset("https://example.com/asset", "output.txt")
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when downloading asset")
+	assert.Equal(t, "Error downloading asset: "+assert.AnError.Error(), err.Error(), "Expected error message to match")
+}
+
+func TestDownloadAsset_ResponseStatusNotOK(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, _ := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns a non-OK status code
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusNotFound,
+				Body:       http.NoBody,
+			}, nil
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Act: attempt to download an asset
+	err := client.DownloadAsset("https://example.com/asset", "output.txt")
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when response status is not OK")
+	assert.Equal(t, "Error downloading asset, status code: 404", err.Error(), "Expected error message to match")
+}
+
+func TestDownloadAsset_CreateFile_Error(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, _ := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns a successful response
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       http.NoBody,
+			}, nil
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Act: attempt to download an asset to a directory that cannot be created
+	err := client.DownloadAsset("https://example.com/asset", "/invalid/path/output.txt")
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when creating file")
+	assert.Contains(t, err.Error(), "Error creating output file:", "Expected error message to match")
+}
