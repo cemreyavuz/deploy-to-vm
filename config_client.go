@@ -59,29 +59,25 @@ func (c *ConfigClient) LoadConfig() error {
 	// Read the config file path from environment variable
 	configFilePath := os.Getenv("DEPLOY_TO_VM_CONFIG_FILE_PATH")
 	if configFilePath == "" {
-		log.Fatalf("Environment variable DEPLOY_TO_VM_CONFIG_FILE_PATH is not set")
+		log.Printf("Environment variable DEPLOY_TO_VM_CONFIG_FILE_PATH is not set")
 		return os.ErrNotExist
 	}
 
 	// Read config file
 	file, openErr := os.Open(configFilePath)
 	if openErr != nil {
-		log.Fatal("Error opening config file:", openErr)
+		log.Println("Error opening config file:", openErr)
 		return openErr
 	}
 
 	// Ensure the file is closed after reading
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			log.Fatal("Error closing config file:", closeErr)
-		}
-	}()
+	defer file.Close()
 
 	// Decode the JSON config file into DeployToVmConfig struct
 	var config DeployToVmConfig
 	decoder := json.NewDecoder(file)
 	if decodeErr := decoder.Decode(&config); decodeErr != nil {
-		log.Fatal("Error decoding config file:", decodeErr)
+		log.Println("Error decoding config file:", decodeErr)
 		return decodeErr
 	}
 
