@@ -189,6 +189,39 @@ func TestDownloadAssets_Multiple(t *testing.T) {
 	assert.Equal(t, testFileContent, string(testAsset0Content), "Expected file content to match")
 }
 
+func TestDownloadAssets_Error(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, _ := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns an error
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return nil, assert.AnError
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Arrange: define the test assets
+	testAssets := []*github.ReleaseAsset{
+		{
+			Name: github.Ptr("test-asset.txt"),
+			URL:  github.Ptr("https://example.com/test-asset.txt"),
+		},
+	}
+
+	// Act: attempt to download the assets
+	err := client.DownloadAssets(testAssets, "/invalid/path")
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when downloading assets")
+	assert.Contains(t, err.Error(), "failed to download asset", "Expected error message to match")
+}
+
 func TestDownloadAsset_NewRequest_Error(t *testing.T) {
 	// Arrange: get test helpers
 	accessToken, _ := setupGithubClientTest(t)
