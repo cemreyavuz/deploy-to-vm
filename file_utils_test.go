@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"os"
 	"path"
 	"testing"
@@ -15,6 +17,28 @@ func setupFileUtilsTest(t *testing.T) string {
 	tempDir := t.TempDir()
 
 	return tempDir
+}
+
+// Helper to create a tar.gz file with one file inside
+func createTestTarGz(t *testing.T, tarGzPath, fileName string, content []byte) {
+	f, err := os.Create(tarGzPath)
+	assert.NoError(t, err)
+	defer f.Close()
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	hdr := &tar.Header{
+		Name: fileName,
+		Mode: 0600,
+		Size: int64(len(content)),
+	}
+	assert.NoError(t, tw.WriteHeader(hdr))
+	_, err = tw.Write(content)
+	assert.NoError(t, err)
 }
 
 func TestCreateDirIfIsNotExist_EmptyPath(t *testing.T) {
@@ -156,4 +180,62 @@ func TestReadFilesInDir_NonExistentDir(t *testing.T) {
 	// Assert: check if the error is not nil and files slice is nil
 	assert.Error(t, err, "Expected error for non-existent directory")
 	assert.ElementsMatch(t, []string{}, files, "Expected files to be empty array")
+}
+
+func TestUntarGzFilesInDir_ExtractsFiles(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a tar.gz file with a single file inside
+	tarGzPath := path.Join(tempDir, "test.tar.gz")
+	content := []byte("hello world")
+	fileName := "hello.txt"
+	createTestTarGz(t, tarGzPath, fileName, content)
+
+	// Act: extract files
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: no error
+	assert.NoError(t, err, "Expected no error extracting tar.gz")
+
+	// Assert: check that the extracted file exists and has correct content
+	extractedFilePath := path.Join(tempDir, fileName)
+	data, readErr := os.ReadFile(extractedFilePath)
+	assert.NoError(t, readErr, "Expected to read extracted file")
+	assert.Equal(t, content, data, "Extracted file content should match original")
+
+	// Assert: check that the tar.gz file is removed
+	_, statErr := os.Stat(tarGzPath)
+	assert.True(t, os.IsNotExist(statErr), "Expected tar.gz file to be removed after extraction")
+}
+
+func TestUntarGzFilesInDir_SkipsNonGzFiles(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a regular file (not .gz)
+	nonGzFile := path.Join(tempDir, "not-a-tar.txt")
+	os.WriteFile(nonGzFile, []byte("data"), 0644)
+
+	// Act: untar files in the directory
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: no error
+	assert.NoError(t, err, "Expected no error when only non-gz files are present")
+
+	// Assert: check that the non-gz file still exists
+	_, statErr := os.Stat(nonGzFile)
+	assert.NoError(t, statErr, "Expected non-gz file to remain")
+}
+
+func TestUntarGzFilesInDir_InvalidGzFile(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create an invalid .gz file
+	invalidGz := path.Join(tempDir, "invalid.tar.gz")
+	os.WriteFile(invalidGz, []byte("not a valid gzip"), 0644)
+
+	// Act: untar files in the directory
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: expect an error due to invalid gzip file
+	assert.Error(t, err, "Expected error for invalid gzip file")
 }
