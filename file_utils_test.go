@@ -239,3 +239,90 @@ func TestUntarGzFilesInDir_InvalidGzFile(t *testing.T) {
 	// Assert: expect an error due to invalid gzip file
 	assert.Error(t, err, "Expected error for invalid gzip file")
 }
+
+func TestLinkReleaseAssetsToSiteDir_Success(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: define release and site directories
+	releaseDir := path.Join(tempDir, "release")
+	siteDir := path.Join(tempDir, "site")
+
+	// Arrange: create release directory and a file inside it
+	err := os.MkdirAll(releaseDir, 0755)
+	assert.NoError(t, err)
+	fileName := "asset.txt"
+	releaseFile := path.Join(releaseDir, fileName)
+	content := []byte("asset content")
+	err = os.WriteFile(releaseFile, content, 0644)
+	assert.NoError(t, err)
+
+	// Arrange: create site directory and a file to be removed
+	err = os.MkdirAll(siteDir, 0755)
+	assert.NoError(t, err)
+	oldSiteFile := path.Join(siteDir, "old.txt")
+	os.WriteFile(oldSiteFile, []byte("old"), 0644)
+
+	// Act: link release assets to site directory
+	linkErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+
+	// Assert: no error
+	assert.NoError(t, linkErr, "Expected no error linking assets")
+
+	// Assert: old file is removed
+	_, statErr := os.Stat(oldSiteFile)
+	assert.True(t, os.IsNotExist(statErr), "Expected old file to be removed from site directory")
+
+	// Assert: asset is linked in site directory
+	linkedFile := path.Join(siteDir, fileName)
+	info, statErr := os.Stat(linkedFile)
+	assert.NoError(t, statErr, "Expected linked file to exist in site directory")
+	assert.False(t, info.IsDir(), "Expected linked file to be a file")
+
+	// Assert: linked file is a hard link (same inode)
+	releaseInfo, _ := os.Stat(releaseFile)
+	assert.Equal(t, releaseInfo.Size(), info.Size(), "Expected linked file to have same size as source")
+}
+
+func TestLinkReleaseAssetsToSiteDir_EmptyReleaseDir(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create empty release and site directories
+	releaseDir := path.Join(tempDir, "release")
+	siteDir := path.Join(tempDir, "site")
+	os.MkdirAll(releaseDir, 0755)
+	os.MkdirAll(siteDir, 0755)
+
+	// Act: link release assets to site directory
+	linkErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+
+	// Assert: no error, nothing to link
+	assert.NoError(t, linkErr, "Expected no error when release dir is empty")
+}
+
+func TestLinkReleaseAssetsToSiteDir_ErrorOnInvalidReleaseDir(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a site directory but no valid release directory
+	siteDir := path.Join(tempDir, "site")
+	os.MkdirAll(siteDir, 0755)
+
+	// Act: try to link a non-existent release directory
+	linkErr := linkReleaseAssetsToSiteDir("/nonexistent/release", siteDir)
+
+	// Assert: error due to invalid release dir
+	assert.Error(t, linkErr, "Expected error for invalid release directory")
+}
+
+func TestLinkReleaseAssetsToSiteDir_ErrorOnInvalidSiteDir(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a release directory but no valid site directory
+	releaseDir := path.Join(tempDir, "release")
+	os.MkdirAll(releaseDir, 0755)
+
+	// Act: try to link to a non-existent site directory
+	linkErr := linkReleaseAssetsToSiteDir(releaseDir, "/nonexistent/site")
+
+	// Assert: error due to invalid site dir
+	assert.Error(t, linkErr, "Expected error for invalid site directory")
+}
