@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -326,4 +328,38 @@ func TestDownloadAsset_CreateFile_Error(t *testing.T) {
 	// Assert: check if the error is as expected
 	assert.Error(t, err, "Expected an error when creating file")
 	assert.Contains(t, err.Error(), "Error creating output file:", "Expected error message to match")
+}
+
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (int, error) {
+	return 0, errors.New("simulated read error")
+}
+
+func TestDownloadAssest_WriteFile_Error(t *testing.T) {
+	// Arrange: get test helpers
+	accessToken, tempDir := setupGithubClientTest(t)
+
+	// Arrange: create a mock HTTP client that returns a successful response
+	mockHttpClient := &MockHttpClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(&errorReader{}),
+			}, nil
+		},
+	}
+
+	// Arrange: create a Github client with the mock HTTP client
+	client := &GithubClient{
+		HttpClient:  mockHttpClient,
+		AccessToken: accessToken,
+	}
+
+	// Act: attempt to download an asset
+	err := client.DownloadAsset("https://example.com/asset", path.Join(tempDir, "output.txt"))
+
+	// Assert: check if the error is as expected
+	assert.Error(t, err, "Expected an error when writing to file")
+	assert.Contains(t, err.Error(), "Error writing to output file:", "Expected error message to match")
 }
