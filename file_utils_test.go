@@ -49,6 +49,32 @@ func TestCreateDirIfIsNotExist_EmptyPath(t *testing.T) {
 	assert.Error(t, createDirErr, "Should return an error for empty path")
 }
 
+func TestCreateDirIfIsNotExist_MkdirAll_Error(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a directory with no permissions
+	noPermDir := path.Join(tempDir, "no-perm-dir")
+	err := os.MkdirAll(noPermDir, 0555) // Create with read and execute permissions only - no write permissions
+	assert.NoError(t, err, "Expected no error creating directory with no permissions")
+
+	// Act: try to create a directory in the no-perm directory
+	createDirErr := createDirIfIsNotExist(path.Join(noPermDir, "subdir"))
+
+	// Assert: check if the error is as expected
+	assert.Error(t, createDirErr, "Should return an error for mkdirall failure")
+	assert.Contains(t, createDirErr.Error(), "Failed to create directory:", "Expected error message to contain 'Failed to create directory'")
+}
+
+func TestCreateDirIfIsNotExist_AlreadyExists(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Act: create a directory that already exists
+	createDirErr := createDirIfIsNotExist(tempDir)
+
+	// Assert: check if the error is nil (directory already exists)
+	assert.NoError(t, createDirErr, "Expected no error when directory already exists")
+}
+
 func TestCreateDirIfIsNotExist_Success(t *testing.T) {
 	tempDir := setupFileUtilsTest(t)
 
