@@ -8,8 +8,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var db = make(map[string]string)
-
 func main() {
 	// set the log entry prefix
 	log.SetPrefix("[deploy-to-vm] ")
