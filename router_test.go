@@ -5,37 +5,63 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/google/go-github/v71/github"
 	"github.com/stretchr/testify/assert"
 )
 
-type MockGithubClient struct{}
+type MockGithubClient struct {
+	DownloadAssetFunc  func(url string, outputPath string) error
+	DownloadAssetsFunc func(assets []*github.ReleaseAsset, releaseDir string) error
+}
 
 func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
+	if m.DownloadAssetFunc != nil {
+		return m.DownloadAssetFunc(url, outputPath)
+	}
+
 	return nil
 }
 
 func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error {
+	if m.DownloadAssetsFunc != nil {
+		return m.DownloadAssetsFunc(assets, releaseDir)
+	}
+
 	return nil
 }
 
-type MockNginxClient struct{}
+type MockNginxClient struct {
+	ReloadFunc func() error
+}
 
 func (m *MockNginxClient) Reload() error {
+	if m.ReloadFunc != nil {
+		return m.ReloadFunc()
+	}
+
 	return nil
 }
 
-type MockNotificationClient struct{}
+type MockNotificationClient struct {
+	NotifyFunc func(message string) error
+}
 
 func (m *MockNotificationClient) LoadWebhookUrl() error {
 	return nil
 }
 
 func (m *MockNotificationClient) Notify(message string) error {
+	if m.NotifyFunc != nil {
+		return m.NotifyFunc(message)
+	}
+
 	return nil
 }
 
@@ -192,4 +218,251 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `{"action":"released"}`)
+}
+
+func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) error {
+			return fmt.Errorf("Failed to download assets")
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to download assets")
+}
+
+func TestDeployWithGH_Untar_Error(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) error {
+			corruptedTarFilePath := path.Join(releaseDir, "corrupted.tar.gz")
+			os.WriteFile(corruptedTarFilePath, []byte("dummy content"), 0644)
+			return nil
+		},
+	}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to untar files in release directory")
+}
+
+func TestDeployWithGH_GetRepository_Error(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "non-existent-repo",
+				Owner:      "non-existent-owner",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Repository not found in config")
+}
+
+func TestDeployWithGH_MissingTargetDir(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  "", // Missing target directory
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Site directory not found for repository")
+}
+
+func TestDeployWithGH_NonExistentSiteDir(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  "/non/existent/dir",
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to move release assets to site directory")
+}
+
+func TestDeployWithGH_Reload_Error(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+	mockNginxClient := &MockNginxClient{
+		ReloadFunc: func() error {
+			return fmt.Errorf("Failed to reload nginx")
+		},
+	}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+		NginxClient:  mockNginxClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to reload nginx unit")
+}
+
+func TestDeployWithGH_Notify_Error(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+	mockNginxClient := &MockNginxClient{}
+	mockNotificationClient := &MockNotificationClient{
+		NotifyFunc: func(message string) error {
+			return fmt.Errorf("Failed to send notification")
+		},
+	}
+
+	configClient := &ConfigClient{}
+	configClient.Config = &DeployToVmConfig{
+		Repositories: []DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := setupRouter(RouterOptions{
+		AssetsDir:          tempDir,
+		ConfigClient:       configClient,
+		GithubClient:       mockGithubClient,
+		NginxClient:        mockNginxClient,
+		NotificationClient: mockNotificationClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }
