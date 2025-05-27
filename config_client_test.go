@@ -57,6 +57,16 @@ func TestGetConfig_EmptyConfigSuccess(t *testing.T) {
 	assert.Equal(t, 0, len(config.Repositories), "Expected no repositories in config")
 }
 
+func TestGetConfig_LoadConfigError(t *testing.T) {
+	// Arrange: create a ConfigClient instance without a loaded config
+	configClient := &ConfigClient{}
+
+	// Act: call GetConfig to trigger loading the config
+	assert.Panics(t, func() {
+		configClient.GetConfig()
+	}, "Expected panic when LoadConfig fails")
+}
+
 func TestGetRepository_Success(t *testing.T) {
 	// Arrange: create a ConfigClient instance with a loaded config
 	configClient := &ConfigClient{}
