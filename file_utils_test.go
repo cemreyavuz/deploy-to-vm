@@ -95,3 +95,65 @@ func TestCreateReleaseDirIfIsNotExist_Success(t *testing.T) {
 		t.Fatalf("Expected directory to be created, but it does not exist")
 	}
 }
+
+func TestReadFilesInDir_EmptyDir(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Act: read files in an empty directory
+	files, err := readFilesInDir(tempDir)
+
+	// Assert: check if the error is nil and files slice is empty
+	assert.NoError(t, err, "Expected no error for empty directory")
+	assert.Empty(t, files, "Expected no files in empty directory")
+}
+
+func TestReadFilesInDir_SingleFile(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a single file
+	filePath := path.Join(tempDir, "testfile.txt")
+	err := os.WriteFile(filePath, []byte("content"), 0644)
+	assert.NoError(t, err, "Expected no error creating file")
+
+	// Act: read files in the directory
+	files, readErr := readFilesInDir(tempDir)
+
+	// Assert: check if the error is nil and files slice contains the file
+	assert.NoError(t, readErr, "Expected no error reading directory")
+	assert.Len(t, files, 1, "Expected one file in directory")
+	assert.Equal(t, filePath, files[0], "Expected file path to match")
+}
+
+func TestReadFilesInDir_NestedFiles(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create nested directories and files
+	nestedDir := path.Join(tempDir, "nested")
+	err := os.MkdirAll(nestedDir, 0755)
+	assert.NoError(t, err, "Expected no error creating nested directory")
+
+	// Arrange: create files in the nested directory and the main directory
+	file1 := path.Join(tempDir, "file1.txt")
+	file2 := path.Join(nestedDir, "file2.txt")
+	os.WriteFile(file1, []byte("a"), 0644)
+	os.WriteFile(file2, []byte("b"), 0644)
+
+	// Act: read files in the directory
+	files, readErr := readFilesInDir(tempDir)
+
+	// Assert: check if the error is nil and files slice contains both files
+	assert.NoError(t, readErr, "Expected no error reading directory")
+	assert.ElementsMatch(t, []string{file1, file2}, files, "Expected all files to be listed")
+}
+
+func TestReadFilesInDir_NonExistentDir(t *testing.T) {
+	// Arrange: create a non-existent directory path
+	nonExistentDir := path.Join(t.TempDir(), "does-not-exist-12345")
+
+	// Act: try to read files in the non-existent directory
+	files, err := readFilesInDir(nonExistentDir)
+
+	// Assert: check if the error is not nil and files slice is nil
+	assert.Error(t, err, "Expected error for non-existent directory")
+	assert.ElementsMatch(t, []string{}, files, "Expected files to be empty array")
+}
