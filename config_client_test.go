@@ -36,6 +36,27 @@ func TestGetConfig_AlreadyLoadedConfigSuccess(t *testing.T) {
 	assert.Equal(t, "nginx", config.Repositories[0].TargetType, "Expected target type to match")
 }
 
+func TestGetConfig_EmptyConfigSuccess(t *testing.T) {
+	// Arrange: create a dummy config in a temporary directory
+	tempDir := t.TempDir()
+	configFilePath := path.Join(tempDir, "config.json")
+	os.WriteFile(configFilePath, []byte("{}"), 0644)
+
+	// Arrange: set the environment variable for config file path
+	os.Setenv("DEPLOY_TO_VM_CONFIG_FILE_PATH", configFilePath)
+	defer os.Unsetenv("DEPLOY_TO_VM_CONFIG_FILE_PATH")
+
+	// Arrange: create a ConfigClient instance with an empty config
+	configClient := &ConfigClient{}
+
+	// Act: call GetConfig to retrieve the config
+	config := configClient.GetConfig()
+
+	// Assert: check if the config is initialized and empty
+	assert.NotNil(t, config, "Expected config to be not nil")
+	assert.Equal(t, 0, len(config.Repositories), "Expected no repositories in config")
+}
+
 func TestGetRepository_Success(t *testing.T) {
 	// Arrange: create a ConfigClient instance with a loaded config
 	configClient := &ConfigClient{}
