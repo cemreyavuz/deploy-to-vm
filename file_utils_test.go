@@ -182,6 +182,52 @@ func TestReadFilesInDir_NonExistentDir(t *testing.T) {
 	assert.ElementsMatch(t, []string{}, files, "Expected files to be empty array")
 }
 
+func TestUntarGzFilesInDir_NonExistentDir(t *testing.T) {
+	// Act: untar files in an empty directory
+	err := untarGzFilesInDir("")
+
+	// Assert: check if the error is not nil
+	assert.Error(t, err, "Expected error for non-existent directory")
+	assert.Contains(t, err.Error(), "Error while reading the directory:", "Expected error for non-existent directory")
+}
+
+func TestUntarGzFilesInDir_OpenError(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a tar.gz file with no read permissions
+	badTarGz := path.Join(tempDir, "missing.tar.gz")
+	os.WriteFile(badTarGz, []byte{}, 0000)
+
+	// Act
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: expect an error due to permission issues
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Error while opening the file:")
+}
+
+func TestUntarGzFilesInDir_ExtractsFilesNested(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a tar.gz file with a nested file structure
+	tarGzPath := path.Join(tempDir, "nested.tar.gz")
+	content := []byte("nested content")
+	nestedFileName := "nested/hello.txt"
+	createTestTarGz(t, tarGzPath, nestedFileName, content)
+
+	// Act: extract files
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: no error
+	assert.NoError(t, err, "Expected no error extracting tar.gz")
+
+	// Assert: check that the extracted file exists and has correct content
+	extractedFilePath := path.Join(tempDir, nestedFileName)
+	data, readErr := os.ReadFile(extractedFilePath)
+	assert.NoError(t, readErr, "Expected to read extracted file")
+	assert.Equal(t, content, data, "Extracted file content should match original")
+}
+
 func TestUntarGzFilesInDir_ExtractsFiles(t *testing.T) {
 	tempDir := setupFileUtilsTest(t)
 
@@ -238,6 +284,32 @@ func TestUntarGzFilesInDir_InvalidGzFile(t *testing.T) {
 
 	// Assert: expect an error due to invalid gzip file
 	assert.Error(t, err, "Expected error for invalid gzip file")
+}
+
+func TestUntarGzFilesInDir_RemoveTarGzAfterExtraction_Success(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: create a tar.gz file with a single file inside
+	tarGzPath := path.Join(tempDir, "test.tar.gz")
+	content := []byte("hello world")
+	fileName := "hello.txt"
+	createTestTarGz(t, tarGzPath, fileName, content)
+
+	// Act: extract files
+	err := untarGzFilesInDir(tempDir)
+
+	// Assert: no error
+	assert.NoError(t, err, "Expected no error extracting tar.gz")
+
+	// Assert: check that the extracted file exists and has correct content
+	extractedFilePath := path.Join(tempDir, fileName)
+	data, readErr := os.ReadFile(extractedFilePath)
+	assert.NoError(t, readErr, "Expected to read extracted file")
+	assert.Equal(t, content, data, "Extracted file content should match original")
+
+	// Assert: check that the tar.gz file is removed
+	_, statErr := os.Stat(tarGzPath)
+	assert.True(t, os.IsNotExist(statErr), "Expected tar.gz file to be removed after extraction")
 }
 
 func TestLinkReleaseAssetsToSiteDir_Success(t *testing.T) {
