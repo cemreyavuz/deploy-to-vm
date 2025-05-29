@@ -400,3 +400,15 @@ func TestSetupGithubClient_NoAccessToken(t *testing.T) {
 	assert.Error(t, err, "Expected an error when access token is not set")
 	assert.Equal(t, "GitHub access token is not set in environment variables", err.Error(), "Expected error message to match")
 }
+
+func TestSetupGithubClient_Success(t *testing.T) {
+	// Arrange: set the environment variable for access token
+	t.Setenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN", "github-client-test-access-token")
+
+	// Act: attempt to set up the Github client
+	client, err := SetupGithubClient()
+
+	// Assert: check if the client is set up successfully
+	assert.NotNil(t, client, "Expected client to be set up successfully")
+	assert.NoError(t, err, "Expected no error when setting up Github client")
+}
