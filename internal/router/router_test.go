@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"deploy-to-vm/internal/config"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -221,6 +222,44 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `{"action":"released"}`)
+}
+
+func TestDeployWithGH_NoAssetsFound(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
+			return errors.New("mock error"), deploy_to_vm_github.DownloadAsset_NoAssetsFound
+		},
+	}
+
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
+			{
+				Name:       "deploy-to-vm",
+				Owner:      "cemreyavuz",
+				SourceType: "github",
+				TargetDir:  t.TempDir(),
+				TargetType: "nginx",
+			},
+		},
+	}
+
+	router := SetupRouter(RouterOptions{
+		AssetsDir:    tempDir,
+		ConfigClient: configClient,
+		GithubClient: mockGithubClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `{"message":"No assets found for release \"dev.0\", will skip the request."}`)
 }
 
 func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {

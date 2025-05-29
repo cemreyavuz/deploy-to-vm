@@ -84,6 +84,27 @@ func TestDownloadAsset_Success(t *testing.T) {
 	assert.Equal(t, testFileContent, string(fileContent), "Expected file content to match")
 }
 
+func TestDownloadAssets_NoAssetsFound(t *testing.T) {
+	// arrange: get test helpers
+	accessToken, tempDir := setupGithubClientTest(t)
+
+	// arrange: create a Github client
+	client := &GithubClient{
+		HttpClient:  &MockHttpClient{},
+		AccessToken: accessToken,
+	}
+
+	// arrange: define an empty assets slice
+	var testAssets []*github.ReleaseAsset
+
+	// act: download the assets
+	downloadErr, code := client.DownloadAssets(testAssets, tempDir)
+
+	// assert: check if the error is as expected
+	assert.Error(t, downloadErr, "Expected an error when no assets are found")
+	assert.Equal(t, DownloadAsset_NoAssetsFound, code, "Expected no assets found error code")
+}
+
 func TestDownloadAssets_Single(t *testing.T) {
 	// arrange: get test helpers
 	accessToken, tempDir := setupGithubClientTest(t)
