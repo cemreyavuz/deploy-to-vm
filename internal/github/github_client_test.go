@@ -387,3 +387,16 @@ func TestDownloadAssest_WriteFile_Error(t *testing.T) {
 	assert.Error(t, err, "Expected an error when writing to file")
 	assert.Contains(t, err.Error(), "Error writing to output file:", "Expected error message to match")
 }
+
+func TestSetupGithubClient_NoAccessToken(t *testing.T) {
+	// Arrange: clear the environment variable to simulate no access token
+	os.Unsetenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
+
+	// Act: attempt to set up the Github client
+	client, err := SetupGithubClient()
+
+	// Assert: check if the error is as expected
+	assert.Nil(t, client, "Expected client to be nil when access token is not set")
+	assert.Error(t, err, "Expected an error when access token is not set")
+	assert.Equal(t, "GitHub access token is not set in environment variables", err.Error(), "Expected error message to match")
+}

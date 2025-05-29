@@ -106,3 +106,17 @@ func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir 
 
 	return nil, DownloadAsset_Success
 }
+
+func SetupGithubClient() (*GithubClient, error) {
+	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
+	if githubAccessToken == "" {
+		return nil, errors.New("GitHub access token is not set in environment variables")
+	}
+
+	githubClient := &GithubClient{
+		AccessToken: githubAccessToken,
+		HttpClient:  &http.Client{},
+	}
+
+	return githubClient, nil
+}

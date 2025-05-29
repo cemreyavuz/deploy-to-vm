@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"deploy-to-vm/internal/config"
@@ -42,11 +41,10 @@ func main() {
 		log.Fatalf("Error creating assets directory: \"%v\"", err)
 	}
 
-	// create github client
-	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
-	githubClient := &deploy_to_vm_github.GithubClient{
-		AccessToken: githubAccessToken,
-		HttpClient:  &http.Client{},
+	// Create github client
+	githubClient, err := deploy_to_vm_github.SetupGithubClient()
+	if err != nil {
+		log.Fatalf("Error setting up GitHub client: \"%v\"", err)
 	}
 
 	// create nginx client
