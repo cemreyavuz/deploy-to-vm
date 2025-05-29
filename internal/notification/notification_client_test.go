@@ -1,4 +1,4 @@
-package main
+package notification
 
 import (
 	"io"
@@ -20,7 +20,7 @@ func TestLoadWebhookUrl_Success(t *testing.T) {
 
 	// Assert: check if the webhook URL is set correctly
 	assert.NoError(t, err)
-	assert.Equal(t, "http://example.com/webhook", client.webhookURL)
+	assert.Equal(t, "http://example.com/webhook", client.WebhookURL)
 }
 
 func TestLoadWebhookUrl_MissingEnv(t *testing.T) {
@@ -46,7 +46,7 @@ func TestNotify_Success(t *testing.T) {
 	defer ts.Close()
 
 	// Act: create a NotificationClient with the test server URL
-	client := &NotificationClient{webhookURL: ts.URL}
+	client := &NotificationClient{WebhookURL: ts.URL}
 	err := client.Notify("hello world")
 
 	// Assert: check if the notification was sent successfully
@@ -56,7 +56,7 @@ func TestNotify_Success(t *testing.T) {
 
 func TestNotify_EmptyMessage(t *testing.T) {
 	// Act: call Notify with an empty message
-	client := &NotificationClient{webhookURL: "http://example.com/webhook"}
+	client := &NotificationClient{WebhookURL: "http://example.com/webhook"}
 	err := client.Notify("")
 
 	// Assert: check if the error is returned
@@ -65,7 +65,7 @@ func TestNotify_EmptyMessage(t *testing.T) {
 
 func TestNotify_NoWebhookURL(t *testing.T) {
 	// Act: call Notify without setting the webhook URL
-	client := &NotificationClient{webhookURL: ""}
+	client := &NotificationClient{WebhookURL: ""}
 	err := client.Notify("test message")
 
 	// Assert: check if the notification is skipped without error
@@ -82,7 +82,7 @@ func TestNotify_PostError(t *testing.T) {
 	defer ts.Close()
 
 	// Act: create a NotificationClient with the test server URL
-	client := &NotificationClient{webhookURL: ts.URL}
+	client := &NotificationClient{WebhookURL: ts.URL}
 	err := client.Notify("fail message")
 
 	// Assert: check if the error is returned

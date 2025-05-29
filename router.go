@@ -9,6 +9,7 @@ import (
 	file_utils "deploy-to-vm/internal/file-utils"
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
+	"deploy-to-vm/internal/notification"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -19,7 +20,7 @@ type RouterOptions struct {
 	ConfigClient       config.ConfigClientInterface
 	GithubClient       deploy_to_vm_github.GithubClientInterface
 	NginxClient        nginx.NginxClientInterface
-	NotificationClient NotificationClientInterface
+	NotificationClient notification.NotificationClientInterface
 	SecretToken        string
 }
 

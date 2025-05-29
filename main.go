@@ -9,6 +9,7 @@ import (
 	file_utils "deploy-to-vm/internal/file-utils"
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
+	"deploy-to-vm/internal/notification"
 
 	"github.com/joho/godotenv"
 )
@@ -57,9 +58,9 @@ func main() {
 	}
 
 	// Create notification client
-	notificationClient := &NotificationClient{}
+	notificationClient := &notification.NotificationClient{}
 	notificationClient.LoadWebhookUrl()
-	if notificationClient.webhookURL == "" {
+	if notificationClient.WebhookURL == "" {
 		log.Println("Notification webhook URL is not set, notifications will not be sent")
 	} else {
 		log.Println("Notification webhook URL is set, notifications will be sent")
