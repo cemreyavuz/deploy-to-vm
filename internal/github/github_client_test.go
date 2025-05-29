@@ -118,10 +118,11 @@ func TestDownloadAssets_Single(t *testing.T) {
 	}
 
 	// act: download the asset
-	downloadErr := client.DownloadAssets(testAssets[:], tempDir)
+	downloadErr, code := client.DownloadAssets(testAssets[:], tempDir)
 
-	// assert: check if the file was created
+	// assert: check if the file was create
 	assert.NoError(t, downloadErr, "Expected no error")
+	assert.Equal(t, DownloadAsset_Success, code, "Expected no error code")
 
 	// assert: check if the file content is as expected
 	testAssetPath := path.Join(tempDir, "test-asset.txt")
@@ -170,10 +171,11 @@ func TestDownloadAssets_Multiple(t *testing.T) {
 	}
 
 	// act: download the asset
-	downloadErr := client.DownloadAssets(testAssets[:], tempDir)
+	downloadErr, code := client.DownloadAssets(testAssets[:], tempDir)
 
 	// assert: check if the file was created
 	assert.NoError(t, downloadErr, "Expected no error")
+	assert.Equal(t, DownloadAsset_Success, code, "Expected no error code")
 
 	// assert: check if the file content is as expected
 	testAsset1Path := path.Join(tempDir, "test-asset0.txt")
@@ -217,11 +219,12 @@ func TestDownloadAssets_Error(t *testing.T) {
 	}
 
 	// Act: attempt to download the assets
-	err := client.DownloadAssets(testAssets, "/invalid/path")
+	err, code := client.DownloadAssets(testAssets, "/invalid/path")
 
 	// Assert: check if the error is as expected
 	assert.Error(t, err, "Expected an error when downloading assets")
-	assert.Contains(t, err.Error(), "failed to download asset", "Expected error message to match")
+	assert.Contains(t, err.Error(), "Error downloading asset:", "Expected error message to match")
+	assert.Equal(t, DownloadAsset_UnknownError, code, "Expected error code to match")
 }
 
 func TestDownloadAsset_NewRequest_Error(t *testing.T) {

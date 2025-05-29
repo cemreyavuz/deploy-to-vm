@@ -12,6 +12,14 @@ import (
 	"github.com/google/go-github/v71/github"
 )
 
+type DownloadAssetStatusCode int
+
+const (
+	DownloadAsset_Success DownloadAssetStatusCode = iota
+	DownloadAsset_UnknownError
+	DownloadAsset_NoAssetsFound
+)
+
 // HttpClient is an interface that defines the Do method for making HTTP
 // requests. This allows for easier testing and mocking of HTTP requests in
 // unit tests. The interface can be implemented by any struct that has a Do
@@ -34,7 +42,7 @@ type GithubClient struct {
 // that has the same methods as the GithubClient struct.
 type GithubClientInterface interface {
 	DownloadAsset(url string, outputPath string) error
-	DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error
+	DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, DownloadAssetStatusCode)
 }
 
 // DownloadAsset is a method of the GithubClient struct that downloads an asset
@@ -83,14 +91,18 @@ func (c *GithubClient) DownloadAsset(url string, outputPath string) error {
 	return nil
 }
 
-func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error {
+func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, DownloadAssetStatusCode) {
+	if len(assets) == 0 {
+		return errors.New("No assets found for release"), DownloadAsset_NoAssetsFound
+	}
+
 	for _, asset := range assets {
 		assetPath := path.Join(releaseDir, *asset.Name)
 		err := c.DownloadAsset(*asset.URL, assetPath)
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to download asset %s: %v", *asset.Name, err))
+			return errors.New("Error downloading asset: " + err.Error()), DownloadAsset_UnknownError
 		}
 	}
 
-	return nil
+	return nil, DownloadAsset_Success
 }

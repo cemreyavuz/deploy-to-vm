@@ -13,13 +13,15 @@ import (
 	"path"
 	"testing"
 
+	deploy_to_vm_github "deploy-to-vm/internal/github"
+
 	"github.com/google/go-github/v71/github"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockGithubClient struct {
 	DownloadAssetFunc  func(url string, outputPath string) error
-	DownloadAssetsFunc func(assets []*github.ReleaseAsset, releaseDir string) error
+	DownloadAssetsFunc func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode)
 }
 
 func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
@@ -30,12 +32,12 @@ func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
 	return nil
 }
 
-func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) error {
+func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
 	if m.DownloadAssetsFunc != nil {
 		return m.DownloadAssetsFunc(assets, releaseDir)
 	}
 
-	return nil
+	return nil, deploy_to_vm_github.DownloadAsset_Success
 }
 
 type MockNginxClient struct {
@@ -224,8 +226,8 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{
-		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) error {
-			return fmt.Errorf("Failed to download assets")
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
+			return fmt.Errorf("Failed to download assets"), deploy_to_vm_github.DownloadAsset_UnknownError
 		},
 	}
 
@@ -248,10 +250,10 @@ func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 func TestDeployWithGH_Untar_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{
-		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) error {
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
 			corruptedTarFilePath := path.Join(releaseDir, "corrupted.tar.gz")
 			os.WriteFile(corruptedTarFilePath, []byte("dummy content"), 0644)
-			return nil
+			return nil, deploy_to_vm_github.DownloadAsset_Success
 		},
 	}
 

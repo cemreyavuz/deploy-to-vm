@@ -65,12 +65,19 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Download assets
-			downloadErr := routerOptions.GithubClient.DownloadAssets(event.Release.Assets, releaseDir)
+			downloadErr, code := routerOptions.GithubClient.DownloadAssets(event.Release.Assets, releaseDir)
 			if downloadErr != nil {
-				log.Printf("Failed to download assets: \"%v\"", downloadErr)
-				// TODO(cemreyavuz): remove the release directory if download fails
 				// TODO(cemreyavuz): return a different error code depending on the error
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download assets"})
+				switch code {
+				case deploy_to_vm_github.DownloadAsset_NoAssetsFound:
+					log.Printf("No assets found for release: \"%s\", will skip the request.", *event.Release.TagName)
+					c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("No assets found for release \"%s\", will skip the request.", *event.Release.TagName)})
+					return
+				default:
+					log.Printf("Failed to download assets: \"%v\"", downloadErr)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to download assets: %v", downloadErr)})
+				}
+				// TODO(cemreyavuz): remove the release directory if download fails
 				return
 			}
 
