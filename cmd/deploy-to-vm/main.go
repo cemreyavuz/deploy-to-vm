@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -11,8 +12,18 @@ import (
 	"deploy-to-vm/internal/notification"
 	"deploy-to-vm/internal/router"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+func startServer(r *gin.Engine) error {
+	port := os.Getenv("DEPLOY_TO_VM_PORT")
+	if port == "" {
+		return errors.New("Environment variable DEPLOY_TO_VM_PORT is not set")
+	}
+
+	return r.Run(":" + port)
+}
 
 func main() {
 	// set the log entry prefix
@@ -59,7 +70,7 @@ func main() {
 	// Create notification client
 	notificationClient := notification.SetupNotificationClient()
 
-	// create router
+	// Create router
 	r := router.SetupRouter(router.RouterOptions{
 		AssetsDir:          assetsDir,
 		ConfigClient:       configClient,
@@ -69,10 +80,8 @@ func main() {
 		SecretToken:        secretToken,
 	})
 
-	// Run the server on the specified port
-	port := os.Getenv("DEPLOY_TO_VM_PORT")
-	if port == "" {
-		log.Fatalf("Environment variable DEPLOY_TO_VM_PORT is not set")
+	// Start the server
+	if err := startServer(r); err != nil {
+		log.Fatalf("Error starting server: \"%v\"", err)
 	}
-	r.Run(":" + port)
 }
