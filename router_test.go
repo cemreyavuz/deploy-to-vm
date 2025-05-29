@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"deploy-to-vm/internal/config"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -143,9 +144,9 @@ func TestDeployWithGH_WithSignature_Success(t *testing.T) {
 	mockNginxClient := &MockNginxClient{}
 	mockNotificationClient := &MockNotificationClient{}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -188,9 +189,9 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 	mockNginxClient := &MockNginxClient{}
 	mockNotificationClient := &MockNotificationClient{}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -254,9 +255,9 @@ func TestDeployWithGH_Untar_Error(t *testing.T) {
 		},
 	}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -288,9 +289,9 @@ func TestDeployWithGH_GetRepository_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "non-existent-repo",
 				Owner:      "non-existent-owner",
@@ -322,9 +323,9 @@ func TestDeployWithGH_MissingTargetDir(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -356,9 +357,9 @@ func TestDeployWithGH_NonExistentSiteDir(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -395,9 +396,9 @@ func TestDeployWithGH_Reload_Error(t *testing.T) {
 		},
 	}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",
@@ -436,9 +437,9 @@ func TestDeployWithGH_Notify_Error(t *testing.T) {
 		},
 	}
 
-	configClient := &ConfigClient{}
-	configClient.Config = &DeployToVmConfig{
-		Repositories: []DeployToVmConfigRepository{
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
 			{
 				Name:       "deploy-to-vm",
 				Owner:      "cemreyavuz",

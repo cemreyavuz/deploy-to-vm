@@ -5,13 +5,15 @@ import (
 	"log"
 	"net/http"
 
+	"deploy-to-vm/internal/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
 )
 
 type RouterOptions struct {
 	AssetsDir          string
-	ConfigClient       ConfigClientInterface
+	ConfigClient       config.ConfigClientInterface
 	GithubClient       GithubClientInterface
 	NginxClient        NginxClientInterface
 	NotificationClient NotificationClientInterface

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"deploy-to-vm/internal/config"
+
 	"github.com/joho/godotenv"
 )
 
@@ -20,7 +22,7 @@ func main() {
 	}
 
 	// Create config client and load config
-	configClient := &ConfigClient{}
+	configClient := &config.ConfigClient{}
 	loadConfigErr := configClient.LoadConfig()
 	if loadConfigErr != nil {
 		log.Fatalf("Error loading config: \"%v\"", loadConfigErr)
