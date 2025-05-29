@@ -7,6 +7,7 @@ import (
 
 	"deploy-to-vm/internal/config"
 	deploy_to_vm_github "deploy-to-vm/internal/github"
+	"deploy-to-vm/internal/nginx"
 
 	"github.com/joho/godotenv"
 )
@@ -46,7 +47,7 @@ func main() {
 	}
 
 	// create nginx client
-	nginxClient := NewNginxClient(nil)
+	nginxClient := nginx.NewNginxClient(nil)
 
 	// Read secret token from environment variable
 	secretToken := os.Getenv("DEPLOY_TO_VM_SECRET_TOKEN")

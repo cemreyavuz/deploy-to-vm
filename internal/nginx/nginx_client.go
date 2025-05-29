@@ -1,4 +1,4 @@
-package main
+package nginx
 
 import (
 	"log"
