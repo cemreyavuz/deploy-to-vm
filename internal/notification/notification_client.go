@@ -50,3 +50,14 @@ func (c *NotificationClient) Notify(message string) error {
 	log.Println("Notification sent:", message)
 	return nil
 }
+
+func SetupNotificationClient() *NotificationClient {
+	notificationClient := &NotificationClient{}
+	notificationClient.LoadWebhookUrl()
+	if notificationClient.WebhookURL == "" {
+		log.Println("Notification webhook URL is not set, notifications will not be sent")
+	} else {
+		log.Println("Notification webhook URL is set, notifications will be sent")
+	}
+	return notificationClient
+}

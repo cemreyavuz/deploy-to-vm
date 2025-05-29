@@ -89,3 +89,26 @@ func TestNotify_PostError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Error sending notification:")
 }
+
+func TestSetupNotificationClient_WithWebhookURL(t *testing.T) {
+	// Arrange
+	os.Setenv("DEPLOY_TO_VM_NOTIFICATION_WEBHOOK_URL", "http://example.com/webhook")
+	defer os.Unsetenv("DEPLOY_TO_VM_NOTIFICATION_WEBHOOK_URL")
+
+	// Act
+	client := SetupNotificationClient()
+
+	// Assert
+	assert.Equal(t, "http://example.com/webhook", client.WebhookURL, "Expected WebhookURL to be set correctly")
+}
+
+func TestSetupNotificationClient_WithoutWebhookURL(t *testing.T) {
+	// Arrange
+	os.Unsetenv("DEPLOY_TO_VM_NOTIFICATION_WEBHOOK_URL")
+
+	// Act
+	client := SetupNotificationClient()
+
+	// Assert
+	assert.Equal(t, "", client.WebhookURL, "Expected WebhookURL to be empty")
+}

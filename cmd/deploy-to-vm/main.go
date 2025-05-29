@@ -59,13 +59,7 @@ func main() {
 	}
 
 	// Create notification client
-	notificationClient := &notification.NotificationClient{}
-	notificationClient.LoadWebhookUrl()
-	if notificationClient.WebhookURL == "" {
-		log.Println("Notification webhook URL is not set, notifications will not be sent")
-	} else {
-		log.Println("Notification webhook URL is set, notifications will be sent")
-	}
+	notificationClient := notification.SetupNotificationClient()
 
 	// create router
 	r := router.SetupRouter(router.RouterOptions{
