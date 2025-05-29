@@ -32,3 +32,6 @@ test-assets
 
 # config files
 config.json
+
+# out files
+deploy-to-vm.bin
