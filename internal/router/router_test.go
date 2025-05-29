@@ -467,3 +467,14 @@ func TestDeployWithGH_Notify_Error(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestPingRoute(t *testing.T) {
+	router := SetupRouter(RouterOptions{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/ping", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "pong", w.Body.String())
+}
