@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"deploy-to-vm/internal/config"
+	file_utils "deploy-to-vm/internal/file-utils"
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
 
@@ -51,7 +52,7 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Create release directory if it doesn't exist
-			releaseDir, createReleaseDirErr := createReleaseDirIfIsNotExist(
+			releaseDir, createReleaseDirErr := file_utils.CreateReleaseDirIfIsNotExist(
 				routerOptions.AssetsDir,
 				*event.Repo.Owner.Login,
 				*event.Repo.Name,
@@ -73,7 +74,7 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Untar files in the release directory
-			untarErr := untarGzFilesInDir(releaseDir)
+			untarErr := file_utils.UntarGzFilesInDir(releaseDir)
 			if untarErr != nil {
 				log.Printf("Failed to untar files in release directory: \"%v\"", untarErr)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to untar files in release directory"})
@@ -95,7 +96,7 @@ func setupRouter(routerOptions RouterOptions) *gin.Engine {
 				return
 			}
 
-			moveErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+			moveErr := file_utils.LinkReleaseAssetsToSiteDir(releaseDir, siteDir)
 			if moveErr != nil {
 				log.Printf("Failed to move release assets to site directory: \"%v\"", moveErr)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move release assets to site directory"})

@@ -1,4 +1,4 @@
-package main
+package file_utils
 
 import (
 	"archive/tar"
@@ -43,7 +43,7 @@ func createTestTarGz(t *testing.T, tarGzPath, fileName string, content []byte) {
 
 func TestCreateDirIfIsNotExist_EmptyPath(t *testing.T) {
 	// act: try to create a directory with an empty path
-	createDirErr := createDirIfIsNotExist("")
+	createDirErr := CreateDirIfIsNotExist("")
 
 	// assert: check if the error is as expected
 	assert.Error(t, createDirErr, "Should return an error for empty path")
@@ -58,7 +58,7 @@ func TestCreateDirIfIsNotExist_MkdirAll_Error(t *testing.T) {
 	assert.NoError(t, err, "Expected no error creating directory with no permissions")
 
 	// Act: try to create a directory in the no-perm directory
-	createDirErr := createDirIfIsNotExist(path.Join(noPermDir, "subdir"))
+	createDirErr := CreateDirIfIsNotExist(path.Join(noPermDir, "subdir"))
 
 	// Assert: check if the error is as expected
 	assert.Error(t, createDirErr, "Should return an error for mkdirall failure")
@@ -69,7 +69,7 @@ func TestCreateDirIfIsNotExist_AlreadyExists(t *testing.T) {
 	tempDir := setupFileUtilsTest(t)
 
 	// Act: create a directory that already exists
-	createDirErr := createDirIfIsNotExist(tempDir)
+	createDirErr := CreateDirIfIsNotExist(tempDir)
 
 	// Assert: check if the error is nil (directory already exists)
 	assert.NoError(t, createDirErr, "Expected no error when directory already exists")
@@ -82,7 +82,7 @@ func TestCreateDirIfIsNotExist_Success(t *testing.T) {
 	dirPath := path.Join(tempDir, "create-dir-test")
 
 	// act: create the directory for the test
-	createDirErr := createDirIfIsNotExist(dirPath)
+	createDirErr := CreateDirIfIsNotExist(dirPath)
 	if createDirErr != nil {
 		t.Fatalf("Expected no error, got %v", createDirErr)
 	}
@@ -102,23 +102,23 @@ func TestCreateReleaseDirIfIsNotExist_EmptyParams(t *testing.T) {
 	tag := "v1.0.0"
 
 	// act/assert: try to create a release directory with empty tag parameter
-	_, emptyTagErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, "")
+	_, emptyTagErr := CreateReleaseDirIfIsNotExist(tempDir, owner, repo, "")
 	assert.Error(t, emptyTagErr, "Should return an error for empty tag parameter")
 
 	// act/assert: try to create a release directory with empty repo parameter
-	_, emptyRepoErr := createReleaseDirIfIsNotExist(tempDir, owner, "", tag)
+	_, emptyRepoErr := CreateReleaseDirIfIsNotExist(tempDir, owner, "", tag)
 	assert.Error(t, emptyRepoErr, "Should return an error for empty repo parameter")
 
 	// act/assert: try to create a release directory with empty owner parameter
-	_, emptyOwnerErr := createReleaseDirIfIsNotExist(tempDir, "", repo, tag)
+	_, emptyOwnerErr := CreateReleaseDirIfIsNotExist(tempDir, "", repo, tag)
 	assert.Error(t, emptyOwnerErr, "Should return an error for empty owner parameter")
 
 	// act/assert: try to create a release directory with empty assetsDir parameter
-	_, assetsDirErr := createReleaseDirIfIsNotExist("", owner, repo, tag)
+	_, assetsDirErr := CreateReleaseDirIfIsNotExist("", owner, repo, tag)
 	assert.Error(t, assetsDirErr, "Should return an error for empty assetsDir parameter")
 
 	// act/assert: try to create a release directory with empty parameters
-	_, emptyParamsErr := createReleaseDirIfIsNotExist("", "", "", "")
+	_, emptyParamsErr := CreateReleaseDirIfIsNotExist("", "", "", "")
 	assert.Error(t, emptyParamsErr, "Should return an error for empty parameters")
 }
 
@@ -132,7 +132,7 @@ func TestCreateReleaseDirIfIsNotExist_Success(t *testing.T) {
 	dirPath := path.Join(tempDir, owner, repo, tag)
 
 	// act: create the release directory
-	releaseDir, createDirErr := createReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+	releaseDir, createDirErr := CreateReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
 
 	// assert: check if the release directory path is correct
 	assert.Equal(t, dirPath, releaseDir, "Expected release directory path to match")
@@ -150,7 +150,7 @@ func TestReadFilesInDir_EmptyDir(t *testing.T) {
 	tempDir := setupFileUtilsTest(t)
 
 	// Act: read files in an empty directory
-	files, err := readFilesInDir(tempDir)
+	files, err := ReadFilesInDir(tempDir)
 
 	// Assert: check if the error is nil and files slice is empty
 	assert.NoError(t, err, "Expected no error for empty directory")
@@ -166,7 +166,7 @@ func TestReadFilesInDir_SingleFile(t *testing.T) {
 	assert.NoError(t, err, "Expected no error creating file")
 
 	// Act: read files in the directory
-	files, readErr := readFilesInDir(tempDir)
+	files, readErr := ReadFilesInDir(tempDir)
 
 	// Assert: check if the error is nil and files slice contains the file
 	assert.NoError(t, readErr, "Expected no error reading directory")
@@ -189,7 +189,7 @@ func TestReadFilesInDir_NestedFiles(t *testing.T) {
 	os.WriteFile(file2, []byte("b"), 0644)
 
 	// Act: read files in the directory
-	files, readErr := readFilesInDir(tempDir)
+	files, readErr := ReadFilesInDir(tempDir)
 
 	// Assert: check if the error is nil and files slice contains both files
 	assert.NoError(t, readErr, "Expected no error reading directory")
@@ -201,7 +201,7 @@ func TestReadFilesInDir_NonExistentDir(t *testing.T) {
 	nonExistentDir := path.Join(t.TempDir(), "does-not-exist-12345")
 
 	// Act: try to read files in the non-existent directory
-	files, err := readFilesInDir(nonExistentDir)
+	files, err := ReadFilesInDir(nonExistentDir)
 
 	// Assert: check if the error is not nil and files slice is nil
 	assert.Error(t, err, "Expected error for non-existent directory")
@@ -210,7 +210,7 @@ func TestReadFilesInDir_NonExistentDir(t *testing.T) {
 
 func TestUntarGzFilesInDir_NonExistentDir(t *testing.T) {
 	// Act: untar files in an empty directory
-	err := untarGzFilesInDir("")
+	err := UntarGzFilesInDir("")
 
 	// Assert: check if the error is not nil
 	assert.Error(t, err, "Expected error for non-existent directory")
@@ -225,7 +225,7 @@ func TestUntarGzFilesInDir_OpenError(t *testing.T) {
 	os.WriteFile(badTarGz, []byte{}, 0000)
 
 	// Act
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: expect an error due to permission issues
 	assert.Error(t, err)
@@ -242,7 +242,7 @@ func TestUntarGzFilesInDir_ExtractsFilesNested(t *testing.T) {
 	createTestTarGz(t, tarGzPath, nestedFileName, content)
 
 	// Act: extract files
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")
@@ -264,7 +264,7 @@ func TestUntarGzFilesInDir_ExtractsFiles(t *testing.T) {
 	createTestTarGz(t, tarGzPath, fileName, content)
 
 	// Act: extract files
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")
@@ -288,7 +288,7 @@ func TestUntarGzFilesInDir_SkipsNonGzFiles(t *testing.T) {
 	os.WriteFile(nonGzFile, []byte("data"), 0644)
 
 	// Act: untar files in the directory
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error when only non-gz files are present")
@@ -306,7 +306,7 @@ func TestUntarGzFilesInDir_InvalidGzFile(t *testing.T) {
 	os.WriteFile(invalidGz, []byte("not a valid gzip"), 0644)
 
 	// Act: untar files in the directory
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: expect an error due to invalid gzip file
 	assert.Error(t, err, "Expected error for invalid gzip file")
@@ -322,7 +322,7 @@ func TestUntarGzFilesInDir_RemoveTarGzAfterExtraction_Success(t *testing.T) {
 	createTestTarGz(t, tarGzPath, fileName, content)
 
 	// Act: extract files
-	err := untarGzFilesInDir(tempDir)
+	err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")
@@ -361,7 +361,7 @@ func TestLinkReleaseAssetsToSiteDir_Success(t *testing.T) {
 	os.WriteFile(oldSiteFile, []byte("old"), 0644)
 
 	// Act: link release assets to site directory
-	linkErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+	linkErr := LinkReleaseAssetsToSiteDir(releaseDir, siteDir)
 
 	// Assert: no error
 	assert.NoError(t, linkErr, "Expected no error linking assets")
@@ -391,7 +391,7 @@ func TestLinkReleaseAssetsToSiteDir_EmptyReleaseDir(t *testing.T) {
 	os.MkdirAll(siteDir, 0755)
 
 	// Act: link release assets to site directory
-	linkErr := linkReleaseAssetsToSiteDir(releaseDir, siteDir)
+	linkErr := LinkReleaseAssetsToSiteDir(releaseDir, siteDir)
 
 	// Assert: no error, nothing to link
 	assert.NoError(t, linkErr, "Expected no error when release dir is empty")
@@ -405,7 +405,7 @@ func TestLinkReleaseAssetsToSiteDir_ErrorOnInvalidReleaseDir(t *testing.T) {
 	os.MkdirAll(siteDir, 0755)
 
 	// Act: try to link a non-existent release directory
-	linkErr := linkReleaseAssetsToSiteDir("/nonexistent/release", siteDir)
+	linkErr := LinkReleaseAssetsToSiteDir("/nonexistent/release", siteDir)
 
 	// Assert: error due to invalid release dir
 	assert.Error(t, linkErr, "Expected error for invalid release directory")
@@ -419,7 +419,7 @@ func TestLinkReleaseAssetsToSiteDir_ErrorOnInvalidSiteDir(t *testing.T) {
 	os.MkdirAll(releaseDir, 0755)
 
 	// Act: try to link to a non-existent site directory
-	linkErr := linkReleaseAssetsToSiteDir(releaseDir, "/nonexistent/site")
+	linkErr := LinkReleaseAssetsToSiteDir(releaseDir, "/nonexistent/site")
 
 	// Assert: error due to invalid site dir
 	assert.Error(t, linkErr, "Expected error for invalid site directory")

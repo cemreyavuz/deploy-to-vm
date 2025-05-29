@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"deploy-to-vm/internal/config"
+	file_utils "deploy-to-vm/internal/file-utils"
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
 
@@ -34,7 +35,7 @@ func main() {
 
 	// create assets folder if not exists
 	assetsDir := os.Getenv("DEPLOY_TO_VM_ASSETS_DIR")
-	err := createDirIfIsNotExist(assetsDir)
+	err := file_utils.CreateDirIfIsNotExist(assetsDir)
 	if err != nil {
 		log.Fatalf("Error creating assets directory: \"%v\"", err)
 	}

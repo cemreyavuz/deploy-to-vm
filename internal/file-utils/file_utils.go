@@ -1,4 +1,4 @@
-package main
+package file_utils
 
 import (
 	"archive/tar"
@@ -14,7 +14,7 @@ import (
 )
 
 // Checks if a directory exists and creates it if it doesn't
-func createDirIfIsNotExist(path string) error {
+func CreateDirIfIsNotExist(path string) error {
 	if path == "" {
 		return fmt.Errorf("Path cannot be empty")
 	}
@@ -32,19 +32,19 @@ func createDirIfIsNotExist(path string) error {
 }
 
 // Checks if a release directory exists and creates it if it doesn't
-func createReleaseDirIfIsNotExist(assetsDir string, owner string, repo string, tag string) (string, error) {
+func CreateReleaseDirIfIsNotExist(assetsDir string, owner string, repo string, tag string) (string, error) {
 	if assetsDir == "" || owner == "" || repo == "" || tag == "" {
 		return "", errors.New("Assets directory, owner, repo, or tag cannot be empty")
 	}
 
 	releaseDirPath := path.Join(assetsDir, owner, repo, tag)
 
-	createDirErr := createDirIfIsNotExist(releaseDirPath)
+	createDirErr := CreateDirIfIsNotExist(releaseDirPath)
 	return releaseDirPath, createDirErr
 }
 
 // Read files in a directory recursively
-func readFilesInDir(dir string) ([]string, error) {
+func ReadFilesInDir(dir string) ([]string, error) {
 	files := make([]string, 0)
 	readErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -64,9 +64,9 @@ func readFilesInDir(dir string) ([]string, error) {
 
 // Untar gz files in a directory. It reads all files in the directory, checks if
 // they are tar files, and extracts them.
-func untarGzFilesInDir(dir string) error {
+func UntarGzFilesInDir(dir string) error {
 	// Read files in the directory recursively
-	files, readErr := readFilesInDir(dir)
+	files, readErr := ReadFilesInDir(dir)
 	if readErr != nil {
 		return errors.New(fmt.Sprintf("Error while reading the directory: %v", readErr))
 	}
@@ -141,16 +141,16 @@ func untarGzFilesInDir(dir string) error {
 }
 
 // Link release assets to site directory
-func linkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
+func LinkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
 	// Read files in release directory recursively
-	filesInReleaseDir, readReleaseDirErr := readFilesInDir(releaseDir)
+	filesInReleaseDir, readReleaseDirErr := ReadFilesInDir(releaseDir)
 	if readReleaseDirErr != nil {
 		return errors.New(fmt.Sprintf("Error while reading the release directory: %v", readReleaseDirErr))
 	}
 	log.Printf("Found files in the release directory: \n- %v", strings.Join(filesInReleaseDir, "\n- "))
 
 	// Read files in site directory
-	filesInSiteDir, readSiteDirErr := readFilesInDir(siteDir)
+	filesInSiteDir, readSiteDirErr := ReadFilesInDir(siteDir)
 	if readSiteDirErr != nil {
 		return errors.New(fmt.Sprintf("Error while reading the site directory: %v", readSiteDirErr))
 	}
