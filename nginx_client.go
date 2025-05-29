@@ -2,12 +2,14 @@ package main
 
 import (
 	"log"
+
+	deploy_to_vm_exec "deploy-to-vm/internal/exec"
 )
 
 // NginxClient is a struct that represents a client for interacting with the
 // Nginx installation in the VM.
 type NginxClient struct {
-	ExecClient ExecClientInterface
+	ExecClient deploy_to_vm_exec.ExecClientInterface
 }
 
 // NginxClientInterface is an interface that defines the methods for the
@@ -29,11 +31,11 @@ func (c *NginxClient) Reload() error {
 	return err
 }
 
-func NewNginxClient(execClient ExecClientInterface) *NginxClient {
+func NewNginxClient(execClient deploy_to_vm_exec.ExecClientInterface) *NginxClient {
 	// If execClient is nil, create a new ExecClient instance
 	if execClient == nil {
 		return &NginxClient{
-			ExecClient: &ExecClient{},
+			ExecClient: &deploy_to_vm_exec.ExecClient{},
 		}
 	}
 

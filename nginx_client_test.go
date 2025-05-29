@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	deploy_to_vm_exec "deploy-to-vm/internal/exec"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +21,7 @@ type MockExecClient struct {
 	CombinedOutputFunc func() ([]byte, error)
 }
 
-func (m *MockExecClient) Command(name string, arg ...string) ExecCommandInterface {
+func (m *MockExecClient) Command(name string, arg ...string) deploy_to_vm_exec.ExecCommandInterface {
 	return &MockExecCommand{
 		CombinedOutputFunc: m.CombinedOutputFunc,
 	}
@@ -75,7 +77,7 @@ func TestNewNginxClient_EmptyExecClient(t *testing.T) {
 
 	// Assert: check if the ExecClient is not nil and is of type ExecClient
 	assert.NotNil(t, nginxClient.ExecClient, "Expected ExecClient to be initialized")
-	assert.IsType(t, &ExecClient{}, nginxClient.ExecClient, "Expected ExecClient to be of type ExecClient")
+	assert.IsType(t, &deploy_to_vm_exec.ExecClient{}, nginxClient.ExecClient, "Expected ExecClient to be of type ExecClient")
 }
 
 func TestNewNginxClient_OverrideExecClient(t *testing.T) {
