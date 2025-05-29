@@ -1,4 +1,4 @@
-package main
+package http_utils
 
 import (
 	"io"
@@ -11,7 +11,7 @@ import (
 
 func TestMakePostRequest_Error(t *testing.T) {
 	// Act: make a POST request to an invalid URL
-	_, err := makePostRequest("http://invalid-url-that-doesnt-exist.example", []byte(`{}`))
+	_, err := MakePostRequest("http://invalid-url-that-doesnt-exist.example", []byte(`{}`))
 
 	// Assert: check if an error is returned
 	assert.Error(t, err, "Expected an error for invalid URL, but got none")
@@ -43,7 +43,7 @@ func TestMakePostRequest_Success(t *testing.T) {
 	defer server.Close()
 
 	// Act: call the function being tested
-	resp, err := makePostRequest(server.URL, []byte(`{"test":"data"}`))
+	resp, err := MakePostRequest(server.URL, []byte(`{"test":"data"}`))
 
 	// Assert: check if request was successful
 	assert.NoError(t, err, "Expected no error, but got one")

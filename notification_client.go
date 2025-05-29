@@ -1,6 +1,7 @@
 package main
 
 import (
+	http_utils "deploy-to-vm/internal/http-utils"
 	"errors"
 	"fmt"
 	"log"
@@ -41,7 +42,7 @@ func (c *NotificationClient) Notify(message string) error {
 	data := []byte(fmt.Sprintf(`{"content": "%s"}`, message))
 
 	// Make the POST request to the notification webhook URL
-	_, postErr := makePostRequest(c.webhookURL, data)
+	_, postErr := http_utils.MakePostRequest(c.webhookURL, data)
 	if postErr != nil {
 		return errors.New("Error sending notification: " + postErr.Error())
 	}
