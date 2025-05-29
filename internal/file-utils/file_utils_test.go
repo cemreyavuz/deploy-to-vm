@@ -210,7 +210,7 @@ func TestReadFilesInDir_NonExistentDir(t *testing.T) {
 
 func TestUntarGzFilesInDir_NonExistentDir(t *testing.T) {
 	// Act: untar files in an empty directory
-	err := UntarGzFilesInDir("")
+	_, err := UntarGzFilesInDir("")
 
 	// Assert: check if the error is not nil
 	assert.Error(t, err, "Expected error for non-existent directory")
@@ -225,7 +225,7 @@ func TestUntarGzFilesInDir_OpenError(t *testing.T) {
 	os.WriteFile(badTarGz, []byte{}, 0000)
 
 	// Act
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: expect an error due to permission issues
 	assert.Error(t, err)
@@ -242,7 +242,7 @@ func TestUntarGzFilesInDir_ExtractsFilesNested(t *testing.T) {
 	createTestTarGz(t, tarGzPath, nestedFileName, content)
 
 	// Act: extract files
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")
@@ -264,7 +264,7 @@ func TestUntarGzFilesInDir_ExtractsFiles(t *testing.T) {
 	createTestTarGz(t, tarGzPath, fileName, content)
 
 	// Act: extract files
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")
@@ -288,7 +288,7 @@ func TestUntarGzFilesInDir_SkipsNonGzFiles(t *testing.T) {
 	os.WriteFile(nonGzFile, []byte("data"), 0644)
 
 	// Act: untar files in the directory
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error when only non-gz files are present")
@@ -306,7 +306,7 @@ func TestUntarGzFilesInDir_InvalidGzFile(t *testing.T) {
 	os.WriteFile(invalidGz, []byte("not a valid gzip"), 0644)
 
 	// Act: untar files in the directory
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: expect an error due to invalid gzip file
 	assert.Error(t, err, "Expected error for invalid gzip file")
@@ -322,7 +322,7 @@ func TestUntarGzFilesInDir_RemoveTarGzAfterExtraction_Success(t *testing.T) {
 	createTestTarGz(t, tarGzPath, fileName, content)
 
 	// Act: extract files
-	err := UntarGzFilesInDir(tempDir)
+	_, err := UntarGzFilesInDir(tempDir)
 
 	// Assert: no error
 	assert.NoError(t, err, "Expected no error extracting tar.gz")

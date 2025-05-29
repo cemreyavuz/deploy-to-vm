@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"deploy-to-vm/internal/config"
 	file_utils "deploy-to-vm/internal/file-utils"
@@ -82,7 +83,7 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Untar files in the release directory
-			untarErr := file_utils.UntarGzFilesInDir(releaseDir)
+			files, untarErr := file_utils.UntarGzFilesInDir(releaseDir)
 			if untarErr != nil {
 				log.Printf("Failed to untar files in release directory: \"%v\"", untarErr)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to untar files in release directory"})
@@ -120,7 +121,7 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Send notification
-			notificationMessage := fmt.Sprintf("New release (%s) deployed for %s", *event.Release.TagName, *event.Repo.Name)
+			notificationMessage := fmt.Sprintf("New release deployed for: `repo:%s` `tag:%s`\\n\\nFiles:\\n```\\n- %s\\n```", *event.Repo.Name, *event.Release.TagName, strings.Join(files, "\\n- "))
 			notificationErr := routerOptions.NotificationClient.Notify(notificationMessage)
 			if notificationErr != nil {
 				log.Printf("Failed to send notification: \"%v\"", notificationErr)
