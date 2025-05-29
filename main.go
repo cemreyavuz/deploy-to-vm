@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"deploy-to-vm/internal/config"
+	deploy_to_vm_github "deploy-to-vm/internal/github"
 
 	"github.com/joho/godotenv"
 )
@@ -39,7 +40,7 @@ func main() {
 
 	// create github client
 	githubAccessToken := os.Getenv("DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN")
-	githubClient := &GithubClient{
+	githubClient := &deploy_to_vm_github.GithubClient{
 		AccessToken: githubAccessToken,
 		HttpClient:  &http.Client{},
 	}

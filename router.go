@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"deploy-to-vm/internal/config"
+	deploy_to_vm_github "deploy-to-vm/internal/github"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -14,7 +15,7 @@ import (
 type RouterOptions struct {
 	AssetsDir          string
 	ConfigClient       config.ConfigClientInterface
-	GithubClient       GithubClientInterface
+	GithubClient       deploy_to_vm_github.GithubClientInterface
 	NginxClient        NginxClientInterface
 	NotificationClient NotificationClientInterface
 	SecretToken        string
