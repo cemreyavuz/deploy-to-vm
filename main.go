@@ -10,6 +10,7 @@ import (
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
 	"deploy-to-vm/internal/notification"
+	"deploy-to-vm/internal/router"
 
 	"github.com/joho/godotenv"
 )
@@ -67,7 +68,7 @@ func main() {
 	}
 
 	// create router
-	r := setupRouter(RouterOptions{
+	r := router.SetupRouter(router.RouterOptions{
 		AssetsDir:          assetsDir,
 		ConfigClient:       configClient,
 		GithubClient:       githubClient,

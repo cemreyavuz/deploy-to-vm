@@ -1,6 +1,7 @@
 package main
 
 import (
+	"deploy-to-vm/internal/router"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestPingRoute(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	router := router.SetupRouter(router.RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)

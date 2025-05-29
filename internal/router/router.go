@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ type RouterOptions struct {
 	SecretToken        string
 }
 
-func setupRouter(routerOptions RouterOptions) *gin.Engine {
+func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()

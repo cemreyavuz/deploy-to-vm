@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"bytes"
@@ -67,7 +67,7 @@ func (m *MockNotificationClient) Notify(message string) error {
 }
 
 func TestDeployWithGH_MissingContentType(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	router := SetupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -78,7 +78,7 @@ func TestDeployWithGH_MissingContentType(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingEventType(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	router := SetupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -90,7 +90,7 @@ func TestDeployWithGH_MissingEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	router := SetupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action": "created"}`
@@ -104,7 +104,7 @@ func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
-	router := setupRouter(RouterOptions{})
+	router := SetupRouter(RouterOptions{})
 
 	w := httptest.NewRecorder()
 	payload := `{"action":"created"}`
@@ -119,7 +119,7 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 
 func TestDeployWithGH_ReleaseNotReleased(t *testing.T) {
 	// Arrange: create a new router
-	router := setupRouter(RouterOptions{})
+	router := SetupRouter(RouterOptions{})
 
 	// Arrange: create a new HTTP request with the release event
 	w := httptest.NewRecorder()
@@ -157,7 +157,7 @@ func TestDeployWithGH_WithSignature_Success(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:          tempDir,
 		ConfigClient:       configClient,
 		GithubClient:       mockGithubClient,
@@ -202,7 +202,7 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:          tempDir,
 		ConfigClient:       configClient,
 		GithubClient:       mockGithubClient,
@@ -229,7 +229,7 @@ func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		GithubClient: mockGithubClient,
 	})
@@ -268,7 +268,7 @@ func TestDeployWithGH_Untar_Error(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
@@ -302,7 +302,7 @@ func TestDeployWithGH_GetRepository_Error(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
@@ -336,7 +336,7 @@ func TestDeployWithGH_MissingTargetDir(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
@@ -370,7 +370,7 @@ func TestDeployWithGH_NonExistentSiteDir(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
@@ -409,7 +409,7 @@ func TestDeployWithGH_Reload_Error(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
 		ConfigClient: configClient,
 		GithubClient: mockGithubClient,
@@ -450,7 +450,7 @@ func TestDeployWithGH_Notify_Error(t *testing.T) {
 		},
 	}
 
-	router := setupRouter(RouterOptions{
+	router := SetupRouter(RouterOptions{
 		AssetsDir:          tempDir,
 		ConfigClient:       configClient,
 		GithubClient:       mockGithubClient,
