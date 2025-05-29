@@ -21,7 +21,7 @@ go run main.go
 ### Building the application
 
 ```sh
-go build -o app.out
+go build -o deploy-to-vm ./cmd/deploy-to-vm
 ```
 
 ### Testing the application
