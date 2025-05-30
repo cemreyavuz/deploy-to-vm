@@ -16,7 +16,7 @@ import (
 // Checks if a directory exists and creates it if it doesn't
 func CreateDirIfIsNotExist(path string) error {
 	if path == "" {
-		return fmt.Errorf("Path cannot be empty")
+		return fmt.Errorf("TYset")
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
