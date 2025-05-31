@@ -1,0 +1,11 @@
+{
+  "repositories": [
+    {
+      "name": "foo-repository",
+      "owner": "bar-owner",
+      "sourceType": "static-webapp",
+      "targetDir": "/var/www/foo-repository",
+      "targetType": "nginx"
+    }
+  ]
+}
