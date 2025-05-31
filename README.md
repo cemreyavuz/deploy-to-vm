@@ -15,7 +15,7 @@ go mod tidy
 ### Running the application
 
 ```sh
-go run main.go
+go run ./...
 ```
 
 ### Building the application
