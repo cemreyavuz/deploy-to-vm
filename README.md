@@ -27,5 +27,5 @@ go build -o deploy-to-vm.bin ./cmd/deploy-to-vm
 ### Testing the application
 
 ```sh
-go test
+go test ./...
 ```
