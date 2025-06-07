@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"log"
 	"os"
 
@@ -30,6 +31,13 @@ func main() {
 	log.SetPrefix("[deploy-to-vm] ")
 	log.Println("Starting deploy-to-vm server...")
 
+	// Define command line flags
+	devFlag := flag.Bool("dev", false, "Runs the server in development mode. In this mode, the server will not validate payloads for webhooks, allowing for easier testing and development.")
+	flag.Parse()
+	if *devFlag {
+		log.Println("\"dev\" flag is set to true. Running in development mode.")
+	}
+
 	// load .env file
 	dotenvErr := godotenv.Load()
 	if dotenvErr != nil {
@@ -37,7 +45,9 @@ func main() {
 	}
 
 	// Create config client and load config
-	configClient := &config.ConfigClient{}
+	configClient := &config.ConfigClient{
+		DevFlag: *devFlag,
+	}
 	loadConfigErr := configClient.LoadConfig()
 	if loadConfigErr != nil {
 		log.Fatalf("Error loading config: \"%v\"", loadConfigErr)

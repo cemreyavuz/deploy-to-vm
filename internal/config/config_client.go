@@ -19,7 +19,8 @@ type DeployToVmConfig struct {
 }
 
 type ConfigClient struct {
-	Config *DeployToVmConfig
+	Config  *DeployToVmConfig
+	DevFlag bool
 }
 
 type ConfigClientInterface interface {
