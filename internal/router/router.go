@@ -75,7 +75,7 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 			}
 
 			// Download assets
-			downloadErr, code := routerOptions.GithubClient.DownloadAssets(event.Release.Assets, releaseDir)
+			code, downloadErr := routerOptions.GithubClient.DownloadAssets(event.Release.Assets, releaseDir)
 			if downloadErr != nil {
 				// TODO(cemreyavuz): return a different error code depending on the error
 				switch code {

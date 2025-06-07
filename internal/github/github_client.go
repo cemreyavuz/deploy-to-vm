@@ -42,7 +42,7 @@ type GithubClient struct {
 // that has the same methods as the GithubClient struct.
 type GithubClientInterface interface {
 	DownloadAsset(url string, outputPath string) error
-	DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, DownloadAssetStatusCode)
+	DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (DownloadAssetStatusCode, error)
 }
 
 // DownloadAsset is a method of the GithubClient struct that downloads an asset
@@ -91,20 +91,20 @@ func (c *GithubClient) DownloadAsset(url string, outputPath string) error {
 	return nil
 }
 
-func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, DownloadAssetStatusCode) {
+func (c *GithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (DownloadAssetStatusCode, error) {
 	if len(assets) == 0 {
-		return errors.New("No assets found for release"), DownloadAsset_NoAssetsFound
+		return DownloadAsset_NoAssetsFound, errors.New("No assets found for release")
 	}
 
 	for _, asset := range assets {
 		assetPath := path.Join(releaseDir, *asset.Name)
 		err := c.DownloadAsset(*asset.URL, assetPath)
 		if err != nil {
-			return errors.New("Error downloading asset: " + err.Error()), DownloadAsset_UnknownError
+			return DownloadAsset_UnknownError, errors.New("Error downloading asset: " + err.Error())
 		}
 	}
 
-	return nil, DownloadAsset_Success
+	return DownloadAsset_Success, nil
 }
 
 func SetupGithubClient() (*GithubClient, error) {

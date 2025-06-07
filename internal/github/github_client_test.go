@@ -98,7 +98,7 @@ func TestDownloadAssets_NoAssetsFound(t *testing.T) {
 	var testAssets []*github.ReleaseAsset
 
 	// act: download the assets
-	downloadErr, code := client.DownloadAssets(testAssets, tempDir)
+	code, downloadErr := client.DownloadAssets(testAssets, tempDir)
 
 	// assert: check if the error is as expected
 	assert.Error(t, downloadErr, "Expected an error when no assets are found")
@@ -139,7 +139,7 @@ func TestDownloadAssets_Single(t *testing.T) {
 	}
 
 	// act: download the asset
-	downloadErr, code := client.DownloadAssets(testAssets[:], tempDir)
+	code, downloadErr := client.DownloadAssets(testAssets[:], tempDir)
 
 	// assert: check if the file was create
 	assert.NoError(t, downloadErr, "Expected no error")
@@ -192,7 +192,7 @@ func TestDownloadAssets_Multiple(t *testing.T) {
 	}
 
 	// act: download the asset
-	downloadErr, code := client.DownloadAssets(testAssets[:], tempDir)
+	code, downloadErr := client.DownloadAssets(testAssets[:], tempDir)
 
 	// assert: check if the file was created
 	assert.NoError(t, downloadErr, "Expected no error")
@@ -240,7 +240,7 @@ func TestDownloadAssets_Error(t *testing.T) {
 	}
 
 	// Act: attempt to download the assets
-	err, code := client.DownloadAssets(testAssets, "/invalid/path")
+	code, err := client.DownloadAssets(testAssets, "/invalid/path")
 
 	// Assert: check if the error is as expected
 	assert.Error(t, err, "Expected an error when downloading assets")

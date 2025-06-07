@@ -23,7 +23,7 @@ import (
 
 type MockGithubClient struct {
 	DownloadAssetFunc  func(url string, outputPath string) error
-	DownloadAssetsFunc func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode)
+	DownloadAssetsFunc func(assets []*github.ReleaseAsset, releaseDir string) (deploy_to_vm_github.DownloadAssetStatusCode, error)
 }
 
 func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
@@ -34,12 +34,12 @@ func (m *MockGithubClient) DownloadAsset(url string, outputPath string) error {
 	return nil
 }
 
-func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
+func (m *MockGithubClient) DownloadAssets(assets []*github.ReleaseAsset, releaseDir string) (deploy_to_vm_github.DownloadAssetStatusCode, error) {
 	if m.DownloadAssetsFunc != nil {
 		return m.DownloadAssetsFunc(assets, releaseDir)
 	}
 
-	return nil, deploy_to_vm_github.DownloadAsset_Success
+	return deploy_to_vm_github.DownloadAsset_Success, nil
 }
 
 type MockNginxClient struct {
@@ -234,8 +234,8 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 func TestDeployWithGH_NoAssetsFound(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{
-		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
-			return errors.New("mock error"), deploy_to_vm_github.DownloadAsset_NoAssetsFound
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (deploy_to_vm_github.DownloadAssetStatusCode, error) {
+			return deploy_to_vm_github.DownloadAsset_NoAssetsFound, errors.New("mock error")
 		},
 	}
 
@@ -272,8 +272,8 @@ func TestDeployWithGH_NoAssetsFound(t *testing.T) {
 func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{
-		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
-			return fmt.Errorf("Failed to download assets"), deploy_to_vm_github.DownloadAsset_UnknownError
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (deploy_to_vm_github.DownloadAssetStatusCode, error) {
+			return deploy_to_vm_github.DownloadAsset_UnknownError, errors.New("Failed to download assets")
 		},
 	}
 
@@ -297,10 +297,10 @@ func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 func TestDeployWithGH_Untar_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	mockGithubClient := &MockGithubClient{
-		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (error, deploy_to_vm_github.DownloadAssetStatusCode) {
+		DownloadAssetsFunc: func(assets []*github.ReleaseAsset, releaseDir string) (deploy_to_vm_github.DownloadAssetStatusCode, error) {
 			corruptedTarFilePath := path.Join(releaseDir, "corrupted.tar.gz")
 			os.WriteFile(corruptedTarFilePath, []byte("dummy content"), 0644)
-			return nil, deploy_to_vm_github.DownloadAsset_Success
+			return deploy_to_vm_github.DownloadAsset_Success, nil
 		},
 	}
 
