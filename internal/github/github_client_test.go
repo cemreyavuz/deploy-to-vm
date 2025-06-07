@@ -398,7 +398,7 @@ func TestSetupGithubClient_NoAccessToken(t *testing.T) {
 	// Assert: check if the error is as expected
 	assert.Nil(t, client, "Expected client to be nil when access token is not set")
 	assert.Error(t, err, "Expected an error when access token is not set")
-	assert.Equal(t, "GitHub access token is not set in environment variables", err.Error(), "Expected error message to match")
+	assert.Equal(t, "environment variable DEPLOY_TO_VM_GITHUB_ACCESS_TOKEN is not set", err.Error(), "Expected error message to match")
 }
 
 func TestSetupGithubClient_Success(t *testing.T) {
