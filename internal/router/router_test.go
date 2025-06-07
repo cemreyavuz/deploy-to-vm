@@ -16,6 +16,7 @@ import (
 
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,8 +70,14 @@ func (m *MockNotificationClient) Notify(message string) error {
 	return nil
 }
 
+func setupTestRouter() *gin.Engine {
+	return SetupRouter(RouterOptions{
+		ConfigClient: &config.ConfigClient{},
+	})
+}
+
 func TestDeployWithGH_MissingContentType(t *testing.T) {
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -81,7 +88,7 @@ func TestDeployWithGH_MissingContentType(t *testing.T) {
 }
 
 func TestDeployWithGH_MissingEventType(t *testing.T) {
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(nil))
@@ -93,7 +100,7 @@ func TestDeployWithGH_MissingEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	payload := `{"action": "created"}`
@@ -107,7 +114,7 @@ func TestDeployWithGH_UnrecognizedEventType(t *testing.T) {
 }
 
 func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	payload := `{"action":"created"}`
@@ -122,7 +129,7 @@ func TestDeployWithGH_UnsupportedEventType(t *testing.T) {
 
 func TestDeployWithGH_ReleaseNotReleased(t *testing.T) {
 	// Arrange: create a new router
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	// Arrange: create a new HTTP request with the release event
 	w := httptest.NewRecorder()
@@ -272,6 +279,7 @@ func TestDeployWithGH_DownloadAssets_Error(t *testing.T) {
 
 	router := SetupRouter(RouterOptions{
 		AssetsDir:    tempDir,
+		ConfigClient: &config.ConfigClient{},
 		GithubClient: mockGithubClient,
 	})
 
@@ -510,7 +518,7 @@ func TestDeployWithGH_Notify_Error(t *testing.T) {
 }
 
 func TestPingRoute(t *testing.T) {
-	router := SetupRouter(RouterOptions{})
+	router := setupTestRouter()
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)

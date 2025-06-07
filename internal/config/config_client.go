@@ -26,6 +26,7 @@ type ConfigClient struct {
 type ConfigClientInterface interface {
 	GetConfig() *DeployToVmConfig
 	GetRepository(name string, owner string) *DeployToVmConfigRepository
+	IsDevelopment() bool
 	LoadConfig() error
 }
 
@@ -54,6 +55,10 @@ func (c *ConfigClient) GetRepository(name string, owner string) *DeployToVmConfi
 
 	// Return nil if not found
 	return nil
+}
+
+func (c *ConfigClient) IsDevelopment() bool {
+	return c.DevFlag
 }
 
 func (c *ConfigClient) LoadConfig() error {

@@ -32,9 +32,18 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 
 	r.POST("/deploy-with-gh", func(c *gin.Context) {
 		// validate payload
-		payload, err := github.ValidatePayload(c.Request, []byte(routerOptions.SecretToken))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+		var (
+			payload       []byte
+			validationErr error
+		)
+		if routerOptions.ConfigClient.IsDevelopment() {
+			log.Println("Developmet mode is enabled, not validating signature")
+			payload, validationErr = github.ValidatePayload(c.Request, nil)
+		} else {
+			payload, validationErr = github.ValidatePayload(c.Request, []byte(routerOptions.SecretToken))
+		}
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid payload %v", validationErr)})
 			return
 		}
 
