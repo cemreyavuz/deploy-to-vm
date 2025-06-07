@@ -2,8 +2,6 @@
 
 [![codecov](https://codecov.io/github/cemreyavuz/deploy-to-vm/graph/badge.svg?token=0XCAR85Q87)](https://codecov.io/github/cemreyavuz/deploy-to-vm)
 
-`deploy-to-vm` is an application used for deploying web applications to virtual machines.
-
 ## Development
 
 ### Installing dependencies
