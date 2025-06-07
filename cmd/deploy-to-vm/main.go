@@ -47,6 +47,9 @@ func main() {
 
 	// create assets folder if not exists
 	assetsDir := os.Getenv("DEPLOY_TO_VM_ASSETS_DIR")
+	if assetsDir == "" {
+		log.Fatal("Environment variable DEPLOY_TO_VM_ASSETS_DIR is not set")
+	}
 	err := file_utils.CreateDirIfIsNotExist(assetsDir)
 	if err != nil {
 		log.Fatalf("Error creating assets directory: \"%v\"", err)
