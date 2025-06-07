@@ -68,7 +68,7 @@ func UntarGzFilesInDir(dir string) ([]string, error) {
 	// Read files in the directory recursively
 	files, readErr := ReadFilesInDir(dir)
 	if readErr != nil {
-		return nil, errors.New(fmt.Sprintf("Error while reading the directory: %v", readErr))
+		return nil, fmt.Errorf("Error while reading the directory: %v", readErr)
 	}
 
 	log.Printf("Found files in the directory: \n- %v", strings.Join(files, "\n- "))
@@ -90,12 +90,12 @@ func UntarGzFilesInDir(dir string) ([]string, error) {
 
 		file, openErr := os.Open(filePath)
 		if openErr != nil {
-			return nil, errors.New(fmt.Sprintf("Error while opening the file: %v", openErr))
+			return nil, fmt.Errorf("Error while opening the file: %v", openErr)
 		}
 
 		gzr, newReaderErr := gzip.NewReader(file)
 		if newReaderErr != nil {
-			return nil, errors.New(fmt.Sprintf("Error while creating gzip reader: %v", newReaderErr))
+			return nil, fmt.Errorf("Error while creating gzip reader: %v", newReaderErr)
 		}
 
 		tr := tar.NewReader(gzr)
@@ -106,7 +106,7 @@ func UntarGzFilesInDir(dir string) ([]string, error) {
 			}
 
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("Error while reading the tar file: %v", err))
+				return nil, fmt.Errorf("Error while reading the tar file: %v", err)
 			}
 
 			switch header.Typeflag {
@@ -137,7 +137,7 @@ func UntarGzFilesInDir(dir string) ([]string, error) {
 		// Remove the original gz file after extraction
 		removeErr := os.Remove(filePath)
 		if removeErr != nil {
-			return nil, errors.New(fmt.Sprintf("Error while removing the original gz file: %v", removeErr))
+			return nil, fmt.Errorf("Error while removing the original gz file: %v", removeErr)
 		} else {
 			log.Printf("Removed original gz file: %s", filePath)
 		}
@@ -151,14 +151,14 @@ func LinkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
 	// Read files in release directory recursively
 	filesInReleaseDir, readReleaseDirErr := ReadFilesInDir(releaseDir)
 	if readReleaseDirErr != nil {
-		return errors.New(fmt.Sprintf("Error while reading the release directory: %v", readReleaseDirErr))
+		return fmt.Errorf("Error while reading the release directory: %v", readReleaseDirErr)
 	}
 	log.Printf("Found files in the release directory: \n- %v", strings.Join(filesInReleaseDir, "\n- "))
 
 	// Read files in site directory
 	filesInSiteDir, readSiteDirErr := ReadFilesInDir(siteDir)
 	if readSiteDirErr != nil {
-		return errors.New(fmt.Sprintf("Error while reading the site directory: %v", readSiteDirErr))
+		return fmt.Errorf("Error while reading the site directory: %v", readSiteDirErr)
 	}
 	log.Printf("Found files in the site directory: \n- %v", strings.Join(filesInSiteDir, "\n- "))
 
@@ -166,7 +166,7 @@ func LinkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
 	for _, file := range filesInSiteDir {
 		removeErr := os.Remove(file)
 		if removeErr != nil {
-			return errors.New(fmt.Sprintf("Error while removing the file from the site directory: %v", removeErr))
+			return fmt.Errorf("Error while removing the file from the site directory: %v", removeErr)
 		}
 	}
 	log.Printf("Removed files in the site directory")
@@ -175,7 +175,7 @@ func LinkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
 	for _, file := range filesInReleaseDir {
 		filePathRelativeToReleaseDir, relErr := filepath.Rel(releaseDir, file)
 		if relErr != nil {
-			return errors.New(fmt.Sprintf("Error while calculating the relative path for the asset: %v", relErr))
+			return fmt.Errorf("Error while calculating the relative path for the asset: %v", relErr)
 		}
 
 		// Generate new file path in site directory
@@ -185,13 +185,13 @@ func LinkReleaseAssetsToSiteDir(releaseDir string, siteDir string) error {
 		parentDir, _ := path.Split(filePathInSiteDir)
 		mkdirErr := os.MkdirAll(parentDir, os.ModePerm)
 		if mkdirErr != nil {
-			return errors.New(fmt.Sprintf("Error while creating the parent directory for asset: %v", mkdirErr))
+			return fmt.Errorf("Error while creating the parent directory for asset: %v", mkdirErr)
 		}
 
 		// Link release asset to site directory
 		linkErr := os.Link(file, filePathInSiteDir)
 		if linkErr != nil {
-			return errors.New(fmt.Sprintf("Error while linking the asset: %v", linkErr))
+			return fmt.Errorf("Error while linking the asset: %v", linkErr)
 		}
 
 		log.Printf("File is linked: %v", file)

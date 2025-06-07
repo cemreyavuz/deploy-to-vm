@@ -71,7 +71,7 @@ func (c *GithubClient) DownloadAsset(url string, outputPath string) error {
 
 	// check if the response status is OK
 	if res.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("Error downloading asset, status code: %v", res.StatusCode))
+		return fmt.Errorf("Error downloading asset, status code: %v", res.StatusCode)
 	}
 
 	// create the output file
