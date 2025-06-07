@@ -39,6 +39,15 @@ func CreateReleaseDirIfIsNotExist(assetsDir string, owner string, repo string, t
 
 	releaseDirPath := path.Join(assetsDir, owner, repo, tag)
 
+	// If releaseDir exists, clear the content
+	if _, err := os.Stat(releaseDirPath); err == nil {
+		log.Println("Release directory exists, clearing content...")
+		err := os.RemoveAll(releaseDirPath)
+		if err != nil {
+			return releaseDirPath, fmt.Errorf("error clearing release directory: %v", err.Error())
+		}
+	}
+
 	createDirErr := CreateDirIfIsNotExist(releaseDirPath)
 	return releaseDirPath, createDirErr
 }

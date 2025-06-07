@@ -122,6 +122,64 @@ func TestCreateReleaseDirIfIsNotExist_EmptyParams(t *testing.T) {
 	assert.Error(t, emptyParamsErr, "Should return an error for empty parameters")
 }
 
+func TestCreateReleaseDirIfIsNotExist_ClearContent(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: define the directory path for the test
+	owner := "test-owner"
+	repo := "test-repo"
+	tag := "v1.0.0"
+	dirPath := path.Join(tempDir, owner, repo, tag)
+
+	// Arrange: create the release dir
+	err := os.MkdirAll(dirPath, 0755)
+	assert.NoError(t, err, "Expected no error creating initial directory")
+
+	// Arrange: create a file in the directory
+	filePath := path.Join(dirPath, "testfile.txt")
+	err = os.WriteFile(filePath, []byte("content"), 0644)
+	assert.NoError(t, err, "Expected no error creating test file")
+
+	// Act: call CreateReleaseDirIfIsNotExist to clear the content
+	CreateReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+
+	// Assert: check if the directory was cleared
+	if _, statErr := os.Stat(filePath); !os.IsNotExist(statErr) {
+		t.Fatalf("Expected content to be cleared but file still exists")
+	}
+}
+
+func TestCreateReleaseDirIfIsNotExist_ClearContentError(t *testing.T) {
+	tempDir := setupFileUtilsTest(t)
+
+	// Arrange: define the directory path for the test
+	owner := "test-owner"
+	repo := "test-repo"
+	tag := "v1.0.0"
+	dirPath := path.Join(tempDir, owner, repo, tag)
+
+	// Arrange: create the release dir that cannot be modified
+	err := os.MkdirAll(dirPath, 0755) // no permissions
+	assert.NoError(t, err, "Expected no error creating initial directory")
+
+	// Arrange: create a file in the directory
+	filePath := path.Join(dirPath, "testfile.txt")
+	err = os.WriteFile(filePath, []byte("content"), 0644)
+	assert.NoError(t, err, "Expected no error creating test file")
+
+	os.Chmod(dirPath, 0444) // set directory to read-only
+
+	// Act: call CreateReleaseDirIfIsNotExist to clear the content
+	_, err = CreateReleaseDirIfIsNotExist(tempDir, owner, repo, tag)
+
+	assert.Error(t, err, "Expected error when trying to clear content of read-only directory")
+	assert.Contains(t, err.Error(), "error clearing release directory")
+
+	t.Cleanup(func() {
+		os.Chmod(dirPath, 0755) // restore permissions for cleanup
+	})
+}
+
 func TestCreateReleaseDirIfIsNotExist_Success(t *testing.T) {
 	tempDir := setupFileUtilsTest(t)
 
