@@ -25,6 +25,9 @@ jobs:
       - name: Build binary
         run: go build -o deploy-to-vm ./cmd/deploy-to-vm
 
+      - name: Compress build artifacts
+        run: tar -czf deploy-to-vm.${{ github.ref_name }}.tar.gz deploy-to-vm
+
       - name: Create release
         uses: cemreyavuz/create-release-with-assets@v1.0.0-alpha.2
         with:
