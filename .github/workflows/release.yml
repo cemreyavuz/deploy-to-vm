@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.24.2'
+
+      - name: Build binary
+        run: go build -o deploy-to-vm ./cmd/deploy-to-vm
+
+      - name: Create release
+        uses: cemreyavuz/create-release-with-assets@v1.0.0-alpha.2
+        with:
+          files: deploy-to-vm
+          tag: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
