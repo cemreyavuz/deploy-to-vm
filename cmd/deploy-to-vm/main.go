@@ -11,6 +11,7 @@ import (
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
 	"deploy-to-vm/internal/notification"
+	"deploy-to-vm/internal/pm2"
 	"deploy-to-vm/internal/router"
 
 	"github.com/gin-gonic/gin"
@@ -74,6 +75,9 @@ func main() {
 	// create nginx client
 	nginxClient := nginx.NewNginxClient(nil)
 
+	// Create pm2 client
+	pm2Client := pm2.NewPm2Client(nil)
+
 	// Read secret token from environment variable
 	secretToken := os.Getenv("DEPLOY_TO_VM_SECRET_TOKEN")
 	if secretToken == "" {
@@ -90,6 +94,7 @@ func main() {
 		GithubClient:       githubClient,
 		NginxClient:        nginxClient,
 		NotificationClient: notificationClient,
+		Pm2Client:          pm2Client,
 		SecretToken:        secretToken,
 	})
 

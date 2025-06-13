@@ -11,6 +11,7 @@ import (
 	deploy_to_vm_github "deploy-to-vm/internal/github"
 	"deploy-to-vm/internal/nginx"
 	"deploy-to-vm/internal/notification"
+	"deploy-to-vm/internal/pm2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
@@ -22,6 +23,7 @@ type RouterOptions struct {
 	GithubClient       deploy_to_vm_github.GithubClientInterface
 	NginxClient        nginx.NginxClientInterface
 	NotificationClient notification.NotificationClientInterface
+	Pm2Client          pm2.Pm2ClientInterface
 	SecretToken        string
 }
 
