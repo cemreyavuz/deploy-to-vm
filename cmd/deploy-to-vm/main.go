@@ -1,10 +1,14 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"flag"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"deploy-to-vm/internal/config"
 	file_utils "deploy-to-vm/internal/file-utils"
@@ -14,17 +18,79 @@ import (
 	"deploy-to-vm/internal/pm2"
 	"deploy-to-vm/internal/router"
 
+	"github.com/cloudflare/tableflip"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-func startServer(r *gin.Engine) error {
+func startServer(r *gin.Engine) {
 	port := os.Getenv("DEPLOY_TO_VM_PORT")
 	if port == "" {
-		return errors.New("Environment variable DEPLOY_TO_VM_PORT is not set")
+		log.Fatalln("Environment variable DEPLOY_TO_VM_PORT is not set")
 	}
 
-	return r.Run(":" + port)
+	pidFile := os.Getenv("DEPLOY_TO_VM_PID_FILE")
+	if pidFile == "" {
+		// TODO(cemreyavuz): alternatively, we can just decide to not support graceful restart
+		log.Fatalln("Environment variable DEPLOY_TO_VM_PID_FILE is not set")
+	}
+
+	log.Println("pidFile", pidFile)
+
+	upg, err := tableflip.New(tableflip.Options{
+		PIDFile: pidFile,
+	})
+	if err != nil {
+		log.Fatalf("Error creating tableflip upgrader: %v", err)
+	}
+	defer upg.Stop()
+
+	// Do an upgrade on SIGHUP
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGHUP)
+		for range sig {
+			err := upg.Upgrade()
+			if err != nil {
+				log.Printf("Error during upgrade: %v", err)
+			}
+		}
+	}()
+
+	listenAddr := ":" + port
+
+	// Listen must be called before ready
+	ln, err := upg.Listen("tcp", listenAddr)
+	if err != nil {
+		log.Fatalln("Error listening on", listenAddr, ":", err)
+	}
+
+	server := &http.Server{
+		Addr:    listenAddr,
+		Handler: r,
+	}
+
+	go func() {
+		if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
+			log.Fatalln("HTTP server:", err)
+		}
+	}()
+
+	log.Println("Server is ready!")
+	if err := upg.Ready(); err != nil {
+		panic(err)
+	}
+	<-upg.Exit()
+
+	// Make sure to set a deadline on exiting the process after upg.Exit() is
+	// called. No new upgrades can be performed if the parent doesn't exist.
+	time.AfterFunc(30*time.Second, func() {
+		log.Println("Graceful shutdown timed out, forcing exit")
+		os.Exit(1)
+	})
+
+	// Wait for connections to drain
+	server.Shutdown(context.Background())
 }
 
 func main() {
@@ -99,7 +165,5 @@ func main() {
 	})
 
 	// Start the server
-	if err := startServer(r); err != nil {
-		log.Fatalf("Error starting server: \"%v\"", err)
-	}
+	startServer(r)
 }

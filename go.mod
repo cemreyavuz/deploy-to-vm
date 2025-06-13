@@ -3,6 +3,7 @@ module deploy-to-vm
 go 1.24.2
 
 require (
+	github.com/cloudflare/tableflip v1.2.3
 	github.com/gin-gonic/gin v1.7.4
 	github.com/google/go-github/v71 v71.0.0
 	github.com/joho/godotenv v1.5.1
@@ -25,6 +26,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
-	golang.org/x/sys v0.0.0-20200116001909-b77594299b42 // indirect
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
