@@ -7,11 +7,12 @@ import (
 )
 
 type DeployToVmConfigRepository struct {
-	Name       string `json:"name"`
-	Owner      string `json:"owner"`
-	SourceType string `json:"sourceType"`
-	TargetDir  string `json:"targetDir"`
-	TargetType string `json:"targetType"`
+	Name              string `json:"name"`
+	Owner             string `json:"owner"`
+	SourceType        string `json:"sourceType"`
+	TargetDir         string `json:"targetDir"`
+	TargetProcessName string `json:"targetProcessName"`
+	TargetType        string `json:"targetType"`
 }
 
 type DeployToVmConfig struct {
