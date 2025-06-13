@@ -13,6 +13,7 @@ import (
 	"deploy-to-vm/internal/notification"
 	"deploy-to-vm/internal/pm2"
 
+	"github.com/cloudflare/tableflip"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
 )
@@ -25,6 +26,7 @@ type RouterOptions struct {
 	NotificationClient notification.NotificationClientInterface
 	Pm2Client          pm2.Pm2ClientInterface
 	SecretToken        string
+	Upgrader           *tableflip.Upgrader
 }
 
 func SetupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -159,6 +161,20 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
+	})
+
+	// Send a SIGHUP signal to the process
+	r.POST("/upgrade", func(c *gin.Context) {
+		// TODO(cemreyavuz): make this route authenticated
+		// TODO(cemreyavuz): check if there is a newer version
+
+		log.Println("Received upgrade request...")
+		c.String(http.StatusOK, "Gracefully upgrading the process")
+
+		err := routerOptions.Upgrader.Upgrade()
+		if err != nil {
+			log.Printf("Error during upgrade: %v", err)
+		}
 	})
 
 	return r

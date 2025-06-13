@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -23,27 +24,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func startServer(r *gin.Engine) {
+func NewUpgrader(options tableflip.Options) (*tableflip.Upgrader, error) {
+	upg, err := tableflip.New(options)
+	if err != nil {
+		return nil, fmt.Errorf("error creating tableflip upgrader: %v", err)
+	}
+
+	return upg, nil
+}
+
+func startServer(r *gin.Engine, upg *tableflip.Upgrader) {
 	port := os.Getenv("DEPLOY_TO_VM_PORT")
 	if port == "" {
 		log.Fatalln("Environment variable DEPLOY_TO_VM_PORT is not set")
 	}
-
-	pidFile := os.Getenv("DEPLOY_TO_VM_PID_FILE")
-	if pidFile == "" {
-		// TODO(cemreyavuz): alternatively, we can just decide to not support graceful restart
-		log.Fatalln("Environment variable DEPLOY_TO_VM_PID_FILE is not set")
-	}
-
-	log.Println("pidFile", pidFile)
-
-	upg, err := tableflip.New(tableflip.Options{
-		PIDFile: pidFile,
-	})
-	if err != nil {
-		log.Fatalf("Error creating tableflip upgrader: %v", err)
-	}
-	defer upg.Stop()
 
 	// Do an upgrade on SIGHUP
 	go func() {
@@ -64,6 +58,7 @@ func startServer(r *gin.Engine) {
 	if err != nil {
 		log.Fatalln("Error listening on", listenAddr, ":", err)
 	}
+	defer upg.Stop()
 
 	server := &http.Server{
 		Addr:    listenAddr,
@@ -153,6 +148,22 @@ func main() {
 	// Create notification client
 	notificationClient := notification.SetupNotificationClient()
 
+	pidFile := os.Getenv("DEPLOY_TO_VM_PID_FILE")
+	if pidFile == "" {
+		// TODO(cemreyavuz): alternatively, we can just decide to not support graceful restart
+		log.Fatalln("Environment variable DEPLOY_TO_VM_PID_FILE is not set")
+	} else {
+		log.Printf("pidFile: %s", pidFile)
+	}
+
+	// Create upgrader
+	upg, err := NewUpgrader(tableflip.Options{
+		PIDFile: pidFile,
+	})
+	if err != nil {
+		log.Fatalf("Error creating upgrader: %v", err)
+	}
+
 	// Create router
 	r := router.SetupRouter(router.RouterOptions{
 		AssetsDir:          assetsDir,
@@ -162,8 +173,9 @@ func main() {
 		NotificationClient: notificationClient,
 		Pm2Client:          pm2Client,
 		SecretToken:        secretToken,
+		Upgrader:           upg,
 	})
 
 	// Start the server
-	startServer(r)
+	startServer(r, upg)
 }
