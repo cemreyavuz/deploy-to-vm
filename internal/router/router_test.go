@@ -54,6 +54,18 @@ func (m *MockNginxClient) Reload() error {
 	return nil
 }
 
+type MockPm2Client struct {
+	ReloadFunc func() error
+}
+
+func (m *MockPm2Client) Reload(targetProcessName string) error {
+	if m.ReloadFunc != nil {
+		return m.ReloadFunc()
+	}
+
+	return nil
+}
+
 type MockNotificationClient struct {
 	NotifyFunc func(message string) error
 }
@@ -217,6 +229,45 @@ func TestDeployWithGH_WithoutSignature_Success(t *testing.T) {
 		ConfigClient:       configClient,
 		GithubClient:       mockGithubClient,
 		NginxClient:        mockNginxClient,
+		NotificationClient: mockNotificationClient,
+	})
+
+	w := httptest.NewRecorder()
+	payload := `{"action":"released","release":{"assets":[{"url":"https://example.com/asset","name":"example-asset"}],"tag_name":"dev.0"},"repository":{"id":973821242,"name":"deploy-to-vm","owner":{"login":"cemreyavuz"}}}`
+	req, _ := http.NewRequest("POST", "/deploy-with-gh", bytes.NewBuffer(([]byte(payload))))
+	req.Header.Set("X-GitHub-Event", "release")
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `{"action":"released"}`)
+}
+
+func TestDeployWithGH_Pm2Process_Success(t *testing.T) {
+	tempDir := t.TempDir()
+	mockGithubClient := &MockGithubClient{}
+	mockPm2Client := &MockPm2Client{}
+	mockNotificationClient := &MockNotificationClient{}
+
+	configClient := &config.ConfigClient{}
+	configClient.Config = &config.DeployToVmConfig{
+		Repositories: []config.DeployToVmConfigRepository{
+			{
+				Name:              "deploy-to-vm",
+				Owner:             "cemreyavuz",
+				SourceType:        "github",
+				TargetDir:         t.TempDir(),
+				TargetType:        "pm2",
+				TargetProcessName: "deploy-to-vm",
+			},
+		},
+	}
+
+	router := SetupRouter(RouterOptions{
+		AssetsDir:          tempDir,
+		ConfigClient:       configClient,
+		GithubClient:       mockGithubClient,
+		Pm2Client:          mockPm2Client,
 		NotificationClient: mockNotificationClient,
 	})
 

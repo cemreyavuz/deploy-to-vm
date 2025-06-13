@@ -123,8 +123,20 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 				return
 			}
 
-			// Reload nginx unit
-			reloadErr := routerOptions.NginxClient.Reload()
+			// Reload the target service (nginx or pm2)
+			reloadFn := func() error {
+				return fmt.Errorf("reload function is not defined for targetType: %s", repositoryConfig.TargetType)
+			}
+
+			if repositoryConfig.TargetType == "nginx" {
+				reloadFn = routerOptions.NginxClient.Reload
+			} else if repositoryConfig.TargetType == "pm2" {
+				reloadFn = func() error {
+					return routerOptions.Pm2Client.Reload(repositoryConfig.TargetProcessName)
+				}
+			}
+
+			reloadErr := reloadFn()
 			if reloadErr != nil {
 				log.Printf("Failed to reload nginx unit: \"%v\"", reloadErr)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload nginx unit"})
