@@ -43,7 +43,9 @@ func startServer(r *gin.Engine, upg *tableflip.Upgrader) {
 	go func() {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, syscall.SIGHUP)
+		log.Println("Signal handler for SIGHUP registered, waiting for signal...")
 		for range sig {
+			log.Println("Received SIGHUP, upgrading...")
 			err := upg.Upgrade()
 			if err != nil {
 				log.Printf("Error during upgrade: %v", err)
