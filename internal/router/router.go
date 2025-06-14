@@ -13,7 +13,6 @@ import (
 	"deploy-to-vm/internal/notification"
 	"deploy-to-vm/internal/pm2"
 
-	"github.com/cloudflare/tableflip"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v71/github"
 )
@@ -26,7 +25,7 @@ type RouterOptions struct {
 	NotificationClient notification.NotificationClientInterface
 	Pm2Client          pm2.Pm2ClientInterface
 	SecretToken        string
-	Upgrader           *tableflip.Upgrader
+	Upgrade            func() error
 }
 
 func SetupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -169,12 +168,15 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 		// TODO(cemreyavuz): check if there is a newer version
 
 		log.Println("Received upgrade request...")
-		c.String(http.StatusOK, "Gracefully upgrading the process")
 
-		err := routerOptions.Upgrader.Upgrade()
+		err := routerOptions.Upgrade()
 		if err != nil {
 			log.Printf("Error during upgrade: %v", err)
+			c.String(http.StatusInternalServerError, "Error during upgrade: %v", err)
+			return
 		}
+
+		c.String(http.StatusOK, "Upgraded the server")
 	})
 
 	return r

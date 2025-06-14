@@ -175,7 +175,7 @@ func main() {
 		NotificationClient: notificationClient,
 		Pm2Client:          pm2Client,
 		SecretToken:        secretToken,
-		Upgrader:           upg,
+		Upgrade:            upg.Upgrade,
 	})
 
 	// Start the server
