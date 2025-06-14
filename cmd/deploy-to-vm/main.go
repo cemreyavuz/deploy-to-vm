@@ -103,7 +103,7 @@ func main() {
 	// load .env file
 	dotenvErr := godotenv.Load()
 	if dotenvErr != nil {
-		log.Fatalf("No .env file found or error loading .env file")
+		log.Println("No .env file found or error loading .env file")
 	}
 
 	// Create config client and load config
