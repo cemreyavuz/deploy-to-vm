@@ -577,4 +577,35 @@ func TestPingRoute(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "pong", w.Body.String())
+
+}
+
+func TestUpgrade_Error(t *testing.T) {
+	router := SetupRouter(RouterOptions{
+		Upgrade: func() error {
+			return errors.New("mock-upgrade-error")
+		},
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/upgrade", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, "Error during upgrade: mock-upgrade-error", w.Body.String())
+}
+
+func TestUpgrade_Success(t *testing.T) {
+	router := SetupRouter(RouterOptions{
+		Upgrade: func() error {
+			return nil
+		},
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/upgrade", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "Upgraded the server", w.Body.String())
 }

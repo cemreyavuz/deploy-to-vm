@@ -25,6 +25,7 @@ type RouterOptions struct {
 	NotificationClient notification.NotificationClientInterface
 	Pm2Client          pm2.Pm2ClientInterface
 	SecretToken        string
+	Upgrade            func() error
 }
 
 func SetupRouter(routerOptions RouterOptions) *gin.Engine {
@@ -159,6 +160,23 @@ func SetupRouter(routerOptions RouterOptions) *gin.Engine {
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
+	})
+
+	// Send a SIGHUP signal to the process
+	r.POST("/upgrade", func(c *gin.Context) {
+		// TODO(cemreyavuz): make this route authenticated
+		// TODO(cemreyavuz): check if there is a newer version
+
+		log.Println("Received upgrade request...")
+
+		err := routerOptions.Upgrade()
+		if err != nil {
+			log.Printf("Error during upgrade: %v", err)
+			c.String(http.StatusInternalServerError, "Error during upgrade: %v", err)
+			return
+		}
+
+		c.String(http.StatusOK, "Upgraded the server")
 	})
 
 	return r

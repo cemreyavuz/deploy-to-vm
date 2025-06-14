@@ -1,10 +1,15 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"deploy-to-vm/internal/config"
 	file_utils "deploy-to-vm/internal/file-utils"
@@ -14,17 +19,75 @@ import (
 	"deploy-to-vm/internal/pm2"
 	"deploy-to-vm/internal/router"
 
+	"github.com/cloudflare/tableflip"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-func startServer(r *gin.Engine) error {
-	port := os.Getenv("DEPLOY_TO_VM_PORT")
-	if port == "" {
-		return errors.New("Environment variable DEPLOY_TO_VM_PORT is not set")
+func NewUpgrader(options tableflip.Options) (*tableflip.Upgrader, error) {
+	upg, err := tableflip.New(options)
+	if err != nil {
+		return nil, fmt.Errorf("error creating tableflip upgrader: %v", err)
 	}
 
-	return r.Run(":" + port)
+	return upg, nil
+}
+
+func startServer(r *gin.Engine, upg *tableflip.Upgrader) {
+	port := os.Getenv("DEPLOY_TO_VM_PORT")
+	if port == "" {
+		log.Fatalln("Environment variable DEPLOY_TO_VM_PORT is not set")
+	}
+
+	// Do an upgrade on SIGHUP
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGHUP)
+		log.Println("Signal handler for SIGHUP registered, waiting for signal...")
+		for range sig {
+			log.Println("Received SIGHUP, upgrading...")
+			err := upg.Upgrade()
+			if err != nil {
+				log.Printf("Error during upgrade: %v", err)
+			}
+		}
+	}()
+
+	listenAddr := ":" + port
+
+	// Listen must be called before ready
+	ln, err := upg.Listen("tcp", listenAddr)
+	if err != nil {
+		log.Fatalln("Error listening on", listenAddr, ":", err)
+	}
+	defer upg.Stop()
+
+	server := &http.Server{
+		Addr:    listenAddr,
+		Handler: r,
+	}
+
+	go func() {
+		if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
+			log.Fatalln("HTTP server:", err)
+		}
+	}()
+
+	log.Println("Server is ready!")
+	if err := upg.Ready(); err != nil {
+		panic(err)
+	}
+	<-upg.Exit()
+
+	// Make sure to set a deadline on exiting the process after upg.Exit() is
+	// called. No new upgrades can be performed if the parent doesn't exist.
+	time.AfterFunc(30*time.Second, func() {
+		log.Println("Graceful shutdown timed out, forcing exit")
+		os.Exit(1)
+	})
+
+	// Wait for connections to drain
+	server.Shutdown(context.Background())
 }
 
 func main() {
@@ -42,7 +105,7 @@ func main() {
 	// load .env file
 	dotenvErr := godotenv.Load()
 	if dotenvErr != nil {
-		log.Fatalf("No .env file found or error loading .env file")
+		log.Println("No .env file found or error loading .env file")
 	}
 
 	// Create config client and load config
@@ -87,6 +150,22 @@ func main() {
 	// Create notification client
 	notificationClient := notification.SetupNotificationClient()
 
+	pidFile := os.Getenv("DEPLOY_TO_VM_PID_FILE")
+	if pidFile == "" {
+		// TODO(cemreyavuz): alternatively, we can just decide to not support graceful restart
+		log.Fatalln("Environment variable DEPLOY_TO_VM_PID_FILE is not set")
+	} else {
+		log.Printf("pidFile: %s", pidFile)
+	}
+
+	// Create upgrader
+	upg, err := NewUpgrader(tableflip.Options{
+		PIDFile: pidFile,
+	})
+	if err != nil {
+		log.Fatalf("Error creating upgrader: %v", err)
+	}
+
 	// Create router
 	r := router.SetupRouter(router.RouterOptions{
 		AssetsDir:          assetsDir,
@@ -96,10 +175,9 @@ func main() {
 		NotificationClient: notificationClient,
 		Pm2Client:          pm2Client,
 		SecretToken:        secretToken,
+		Upgrade:            upg.Upgrade,
 	})
 
 	// Start the server
-	if err := startServer(r); err != nil {
-		log.Fatalf("Error starting server: \"%v\"", err)
-	}
+	startServer(r, upg)
 }
